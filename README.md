@@ -4,7 +4,7 @@
 <!-- TOC depthFrom:2 depthTo:3 withLinks:1 updateOnSave:1 orderedList:0 -->
 - [About this package](#about-this-package)
 - [Installation](#installation)
-- [Running Culebront](#running-culebront)
+- [Running workflow](#running-workflow)
 - [Citation](#citation)
 - [License](#license)
 <!-- /TOC -->
@@ -25,7 +25,7 @@ The Best snakemake mapping pipeline !!!
 git clone https://github.com/sravel/snake-Mapping.git
 ```
 
-## Running mapping
+## Running workflow
 
 * To run the pipeline:
 ```ruby
