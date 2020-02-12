@@ -187,7 +187,7 @@ rule run_atropos_PE:
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell: config["MODULES"]["ATROPOS"]+"""
-        atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSPE"]+""" -o {output.R1} -p {output.R2} -pe1 {input.pe1} -pe2 {input.pe2}  1>{log.output} 2>{log.error}
+        atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSPE"]+""" -o {output.R1} -p {output.R2} -pe1 {input.R1} -pe2 {input.R2}  1>{log.output} 2>{log.error}
     """
 
 # 1=atropos
@@ -207,10 +207,8 @@ rule run_atropos_SE:
             Execute {{rule}} for 
                 Input:
                     - Fastq R1 : {{input.R1}}
-                    - Fastq R2 : {{input.R2}}
                 Output:
                     - Fastq R1 : {{output.R1}}
-                    - Fastq R2 : {{output.R2}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
@@ -218,7 +216,7 @@ rule run_atropos_SE:
             {sep*108}"""
     shell:
             config["MODULES"]["ATROPOS"]+"""
-                atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSSE"]+""" -o {output.R1} -se {input.pe1}  1>{log.output} 2>{log.error}
+                atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSSE"]+""" -o {output.R1} -se {input.R1}  1>{log.output} 2>{log.error}
             """
 
 # 2=fastqc
