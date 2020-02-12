@@ -1,0 +1,61 @@
+__default__:
+    n_cpu: "-pe parallel_smp {threads}"
+    mem: "-l mem_free=4G"
+    export_env: "-V"
+    cwd: "-cwd"
+    logerror: "-e {log.error}"
+    log: "-o {log.output}"
+    queue: "-q normal.q"
+    jobname: "{rulename}.{name}.{jobid}"
+
+bwa_index:
+    queue: "-q short.q"
+run_atropos_PE:
+    mem: "-l mem_free=4G"
+run_atropos_SE:
+    mem: "-l mem_free=4G"
+run_fastqc_PE:
+    mem: "-l mem_free=4G"
+run_fastqc_SE:
+    mem: "-l mem_free=4G"
+run_bwa_aln_PE:
+    mem: "-l mem_free=4G"
+run_bwa_aln_SE:
+    mem: "-l mem_free=4G"
+bwa_samse_sort_bam:
+    mem: "-l mem_free=4G"
+bwa_sampe_sort_bam:
+    mem: "-l mem_free=4G"
+merge_bam_directories:
+    mem: "-l mem_free=4G"
+samtools_idxstats:
+    mem: "-l mem_free=4G"
+samtools_depth:
+    mem: "-l mem_free=4G"
+merge_idxstats:
+    mem: "-l mem_free=4G"
+bam_stats_to_csv:
+    mem: "-l mem_free=20G"
+merge_bam_stats:
+    mem: "-l mem_free=4G"
+picardTools_mark_duplicates:
+    mem: "-l mem_free=20G"
+    queue: "-q normal.q"
+gatk_HaplotypeCaller:
+    javaMem: "4g"
+    mem: "-l mem_free=4G"
+    queue: "-q long.q"
+gatk_GenomicsDBImport:
+    javaMem: "30g"
+    mem: "-l mem_free=30G"
+    queue: "-q long.q"
+gatk_GenotypeGVCFs_merge:
+    javaMem: "30g"
+    mem: "-l mem_free=40G"
+    queue: "-q long.q"
+create_sequence_dict:
+    javaMem: "8g"
+    mem: "-l mem_free=10G"
+    queue: "-q normal.q"
+bcftools_concat:
+     queue: "-q test.q"

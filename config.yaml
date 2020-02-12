@@ -1,0 +1,35 @@
+# Master sRNA_pipeline configuration file template
+# ------------------------------------------
+
+####################
+# Input output data options
+'DATA':
+    'directories':
+        'samples_dir': "/work/sravel/mapping/fastq/"       # samples dir
+        'reference_file': "/work/sravel/mapping/ref/Mycfi2_wg_ed.fasta"       # references dir
+        #'reference_file': "/work/sravel/mapping/ref/scaff-test.fasta"       # references dir
+        'out_dir': "/work/sravel/mapping/pop_genome_86_samples/"       # Out directory
+    mitochondrial_name : "mtDNA"
+##################
+# Pipeline options
+
+##############################
+# Location of various software
+#
+# the variable must load soft on the $PATH environement
+MODULES:
+    "SAMTOOLS": "module load bioinfo/samtools/1.9"         # use for filter reads and convert sam to bam
+    "PYTHON3": "module load system/python/3.7.3"           # Python3 >=3.6 with require libraries
+    "BWA": "module load bioinfo/bwa/0.7.15"                # for make the mapping
+    "ATROPOS": "module load system/python/3.7.3"           # for call atropos
+    "FASTQC": "module load bioinfo/FastQC/0.11.7"          # for controle quality
+    "PICARDTOOLS": "module load bioinfo/picard-tools/2.7.0"          # for controle quality
+    "GATK4": "module load bioinfo/GATK/4.1.4.0"          # for controle quality
+    "BCFTOOLS": "module purge && module load bioinfo/bcftools/1.9"          # for contact vcf
+
+############################
+# Misc. options for programs
+PARAMSTOOLS:
+    "ATROPOSSE": "--minimum-length 35  -q 20  -u 8  -O 10"
+    "ATROPOSPE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
+    "samtoolsview": ""
