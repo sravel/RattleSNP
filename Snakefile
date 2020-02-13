@@ -3,10 +3,7 @@
 ## @RAVEL-Sebastien
 ##
 
-import glob
 import pprint
-import re
-import sys
 from pathlib import Path
 
 from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
@@ -28,8 +25,8 @@ cluster_config: "cluster_config.yaml"
 samples_dir = config["DATA"]["directories"]["samples_dir"]
 reference_file =  config["DATA"]["directories"]["reference_file"]
 basename_reference = Path(reference_file).stem
-cleanning = False											# TODO run Atropos fans FastQC if True
-build_stats = True
+cleanning =  config["cleanning"]
+build_stats =  config["build_stats"]
 
 # print(basename_reference)
 out_dir = config["DATA"]["directories"]["out_dir"]
@@ -37,6 +34,21 @@ log_dir = f"{out_dir}LOGS/"
 # to lunch separator
 sep="#"
 
+#############################################
+# use threads define in cluster_config rule or rule default or default in snakefile
+#############################################
+def get_threads(rule, default):
+    """
+    use threads define in cluster_config rule or rule default or default in snakefile
+    :param rule:
+    :param default:
+    :return: int(threads)
+    """
+    if rule in cluster_config and 'threads' in cluster_config[rule]:
+        return int(cluster_config[rule]['threads'])
+    elif '__default__' in cluster_config and 'threads' in cluster_config['__default__']:
+        return int(cluster_config['__default__']['threads'])
+    return default
 
 #*###############################################################################
 def get_list_chromosome_names(fasta_file):
@@ -132,7 +144,7 @@ rule final:
 # 0 index of genome file
 rule bwa_index:
     """make index with bwa for reference file"""
-    threads: 1
+    threads: get_threads('bwa_index', 1)
     input:
             fasta = reference_file
     output:
@@ -161,7 +173,7 @@ rule bwa_index:
 # 1=atropos PE
 rule run_atropos_PE:
     """Run atropos for cleanning data"""
-    threads: 5
+    threads: get_threads('run_atropos_PE', 1)
     input:
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz",
             R2 = f"{samples_dir}{{samples}}_R2.fastq.gz",
@@ -193,7 +205,7 @@ rule run_atropos_PE:
 # 1=atropos
 rule run_atropos_SE:
     """Run atropos for cleanning data"""
-    threads: 6
+    threads: get_threads('run_atropos_SE', 1)
     input:
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz",
     output:
@@ -222,7 +234,7 @@ rule run_atropos_SE:
 # 2=fastqc
 rule run_fastqc_PE:
     """Run fastqc for controle data"""
-    threads: 2
+    threads: get_threads('run_fastqc_PE', 1)
     input:
             R1 = rules.run_atropos_PE.output.R1,
             R2 = rules.run_atropos_PE.output.R2
@@ -254,7 +266,7 @@ rule run_fastqc_PE:
 
 rule run_fastqc_SE:
     """Run fastqc for controle data"""
-    threads: 1
+    threads: get_threads('run_fastqc_SE', 1)
     input:
             R1 = rules.run_atropos_SE.output.R1
     output:
@@ -282,7 +294,7 @@ rule run_fastqc_SE:
 # 3=bwaAln
 rule run_bwa_aln_PE:
     """make bwa aln for all samples PE on reference"""
-    threads: 6
+    threads: get_threads('run_bwa_aln_PE', 1)
     input:
             fasta = reference_file,
             index = rules.bwa_index.output.sa_file,
@@ -318,7 +330,7 @@ rule run_bwa_aln_PE:
 
 rule run_bwa_aln_SE:
     """make bwa aln for all samples SE on reference"""
-    threads: 6
+    threads: get_threads('run_bwa_aln_SE', 1)
     input: 	fasta = reference_file,
             index = rules.bwa_index.output.sa_file,
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_SE.output.R1
@@ -348,7 +360,7 @@ rule run_bwa_aln_SE:
 
 rule bwa_samse_sort_bam:
     """make bwa samse for all samples SE on reference"""
-    threads: 6
+    threads: get_threads('bwa_samse_sort_bam', 1)
     input: 	fasta = reference_file,
             index = rules.bwa_index.output.sa_file,
             R1 = rules.run_bwa_aln_SE.input.R1,
@@ -383,7 +395,7 @@ rule bwa_samse_sort_bam:
 
 rule bwa_sampe_sort_bam:
     """make bwa sampe for all samples PE on reference"""
-    threads: 6
+    threads: get_threads('bwa_sampe_sort_bam', 1)
     input:
             fasta = reference_file,
             index = rules.bwa_index.output.sa_file,
@@ -422,7 +434,7 @@ rule bwa_sampe_sort_bam:
 
 rule merge_bam_directories:
     """Merge paired and single on same directory and index"""
-    threads: 1
+    threads: get_threads('merge_bam_directories', 1)
     input:
             unpack(get_files_path)
     output:
@@ -453,7 +465,7 @@ rule merge_bam_directories:
 ####### Stats
 rule samtools_idxstats:
     """apply samtools idxstats on all bam SE end PE"""
-    threads: 4
+    threads: get_threads('samtools_idxstats', 1)
     input:
             bam = rules.merge_bam_directories.output.bam_all
     output:
@@ -480,7 +492,7 @@ rule samtools_idxstats:
             """
 rule merge_idxstats:
     """merge all samtools idxstats files"""
-    threads : 1
+    threads : get_threads('merge_idxstats', 1)
     input :
             csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = SAMPLES),
     output :
@@ -507,7 +519,7 @@ rule merge_idxstats:
 ########################## STATS BAM
 rule samtools_depth:
     """apply samtools depth on all bam SE end PE"""
-    threads: 1
+    threads: get_threads('samtools_depth', 1)
     input:
             bam = rules.merge_bam_directories.output.bam_all
     output:
@@ -535,7 +547,7 @@ rule samtools_depth:
 
 rule bam_stats_to_csv:
     """build csv with mean depth, median depth and mean coverage for all bam"""
-    threads : 1
+    threads : get_threads('bam_stats_to_csv', 1)
     input :
             bam_file = rules.merge_bam_directories.output.bam_all
     output :
@@ -561,7 +573,7 @@ rule bam_stats_to_csv:
 
 rule merge_bam_stats:
     """merge all bam_stats_to_csv files"""
-    threads : 1
+    threads : get_threads('merge_bam_stats', 1)
     input :
             csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = SAMPLES),
     output :
@@ -590,7 +602,7 @@ rule merge_bam_stats:
 
 rule picardTools_mark_duplicates:
     """apply gatk_realigner_target_creator on all bam SE end PE"""
-    threads: 1
+    threads: get_threads('picardTools_mark_duplicates', 1)
     input:
             bam_file = rules.merge_bam_directories.output.bam_all
     output:
@@ -620,7 +632,7 @@ rule picardTools_mark_duplicates:
 ########################## SNP calling
 rule create_sequence_dict:
     """create sequence dict for gatk_HaplotypeCaller reference"""
-    threads: 1
+    threads: get_threads('create_sequence_dict', 1)
     input:
             reference = reference_file
     output:
@@ -649,7 +661,7 @@ rule create_sequence_dict:
 
 rule gatk_HaplotypeCaller:
     """apply gatk_HaplotypeCaller on all bam SE end PE"""
-    threads: 6
+    threads: get_threads('gatk_HaplotypeCaller', 1)
     input:
             bam_file = rules.picardTools_mark_duplicates.output.bam_file,
             reference = reference_file,
@@ -657,7 +669,7 @@ rule gatk_HaplotypeCaller:
     output:
             vcf_file = f"{out_dir}3_snp_calling/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
-            java_mem="4g",
+            java_mem="4g",                  # TODO add argument to cluster_config
             interval = "{chromosomes}"
     log:
             error =  f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.e',
@@ -695,14 +707,14 @@ def get_gvcf_list(list):
 
 rule gatk_GenomicsDBImport:
     """apply GenomicsDBImport on all gvcf by chromosomes """
-    threads: 1
+    threads: get_threads('gatk_GenomicsDBImport', 1)
     input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}"),
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict,
     output:
             db = directory(f"{out_dir}4_DB_import/DB_{{chromosomes}}"),
     params:
-            java_mem="8g",
+            java_mem="8g",                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
             str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}"))
     log:
@@ -732,7 +744,7 @@ rule gatk_GenomicsDBImport:
 
 rule gatk_GenotypeGVCFs_merge:
     """apply GenotypeGVCFs on all gvcf"""
-    threads: 1
+    threads: get_threads('gatk_GenotypeGVCFs_merge', 1)
     input:
             db = rules.gatk_GenomicsDBImport.output.db,
             reference = reference_file,
@@ -740,7 +752,7 @@ rule gatk_GenotypeGVCFs_merge:
     output:
             vcf_file = f'{out_dir}3_snp_calling/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
     params:
-            java_mem="30g",
+            java_mem="30g",              # TODO add argument to cluster_config
     log:
             error =  f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.o'
@@ -765,14 +777,12 @@ rule gatk_GenotypeGVCFs_merge:
         """
 
 rule bcftools_concat:
-    threads: 10
+    threads: get_threads('bcftools_concat', 1)
     input:
             vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES),
             vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES_WITHOUT_MITO),
     output:
             vcf_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
-    params:
-            java_mem="30g",
     log:
             error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
             output = f'{log_dir}bcftools_concat/bcftools_concat.o'

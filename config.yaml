@@ -12,7 +12,8 @@
     mitochondrial_name : "mtDNA"
 ##################
 # Pipeline options
-
+cleanning: False 											# boolean run Atropos if True
+build_stats: False                                          # boolean, add stats mapping report if True
 ##############################
 # Location of various software
 #
