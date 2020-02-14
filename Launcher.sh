@@ -4,9 +4,8 @@ module purge
 module load system/python/3.7.3
 module load system/graphviz/2.40.1
 
-export DRMAA_LIBRARY_PATH=/SGE/8.1.8/lib/lx-amd64/libdrmaa.so
-cluster_config="/work/sravel/mapping/cluster_config.yaml"
-datas_config="/work/sravel/mapping/config.yaml"
+cluster_config=`pwd`"/cluster_config.yaml"
+datas_config=`pwd`"/config.yaml"
 
 # produit le graph du pipeline
 #snakemake --configfile ${datas_config} --cluster-config ${cluster_config} --rulegraph  > schema_pipeline_global.dot && dot schema_pipeline_global.dot -Tpdf > schema_pipeline_global.pdf
