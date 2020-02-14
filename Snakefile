@@ -803,6 +803,18 @@ rule bcftools_concat:
         config["MODULES"]["BCFTOOLS"]+"""
             bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z 1>{log.output} 2>{log.error}
         """
+
+rule report:
+    input:
+         depth_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
+         idxstats_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
+    output:
+        f"{out_dir}/report.html",
+    script:
+        "./script/report.Rmd"
+
+
+
 ################################################################################
 # create log dir path
 build_log_path(debug=False)
