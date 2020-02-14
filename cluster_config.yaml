@@ -87,4 +87,4 @@ create_sequence_dict:
 
 bcftools_concat:
     threads: 10
-     queue: "-q short.q"
+    queue: "-q short.q"
