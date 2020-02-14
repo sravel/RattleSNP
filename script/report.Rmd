@@ -1,0 +1,94 @@
+---
+title: "Test Report"
+author:
+    - "Sébastien RAVEL"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+   rmd: "report.Rmd"
+output:
+  html_document:
+    logo: "logo_gallery.png"
+    fig_caption: yes
+    highlight: zenburn
+    theme: cerulean
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    number_sections: false
+    includes:
+      #in_header: header.html
+      #before_body: doc_prefix.html
+      after_body: footer.html
+---
+
+```{r Package , echo=FALSE}
+# list of packages required
+list.of.packages <- c("knitr", "DT", "ggplot2")
+#checking missing packages from list
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+#install missing ones
+if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
+library('knitr')
+library('DT')
+library('ggplot2')
+```
+```{js logo-js, echo=FALSE}
+$(document).ready(function() {
+  $('#header').parent().prepend('<div id=\"logo\"><img src=\"https://avatars3.githubusercontent.com/u/11534773?s=460&v=4\" style=\"position:absolute; top:0; right:20px; padding:30px; height:180px\"></div>');
+  $('#header').css('margin-right', '120px')
+});
+```
+
+```{r knitr setup, include=FALSE,  eval=TRUE, echo=FALSE, warning=FALSE}
+options(width=300)
+knitr::opts_chunk$set(
+  fig.width = 10,
+  fig.height = 5,
+  fig.align = "center",
+  size = "tiny",
+  echo = TRUE, eval=TRUE, cache=TRUE,
+  warning = FALSE, message = FALSE,
+  results = TRUE, comment = "")
+# knitr::asis_output("\\footnotesize")
+
+```
+
+Test include from snakemake `r snakemake@input`.
+
+## Source
+<a download="report.Rmd" href="`r base64enc::dataURI(file = params$rmd, mime = 'text/rmd', encoding = 'base64')`">R Markdown source file (to produce this document)</a>
+
+
+&nbsp;
+
+# Mapping
+
+## Library size / mapped
+
+```{r Importation des données, echo=FALSE}
+
+file.quality <- snakemake@idxstats_resume
+datatableQ <- read.table(file=file.quality, sep="\t", header=TRUE)
+```
+
+```{R Visualisation des données brut, echo=FALSE}
+datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
+          colnames = c("Sample",colnames(datatableQ[,2:4])),
+          rownames = NULL,
+          extensions = 'Buttons', 
+          style = 'bootstrap', class = 'table table-striped table-bordered table-hover',
+          filter = list(position = 'top', clear = FALSE, plain = TRUE),
+          options = list(
+                         paging=TRUE, pageLength = 10, searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = FALSE, autoWidth = TRUE,
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                        dom = 'Blfrtip'
+                    )
+        )
+       #%>%
+      #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
+```
+
+
+## Library size / mapped
