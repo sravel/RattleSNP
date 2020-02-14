@@ -7,11 +7,11 @@ params:
    rmd: "report.Rmd"
 output:
   html_document:
-  highlight: tango
+  highlight: cerulean
   number_sections: no
-  theme: default
+  theme: cerulean
   toc: yes
-  toc_depth: 3
+  toc_depth: 5
   toc_float:
     collapsed: no
     smooth_scroll: yes
@@ -25,3 +25,62 @@ Test include from snakemake `r snakemake@input`.
 
 ## Source
 <a download="report.Rmd" href="`r base64enc::dataURI(file = params$rmd, mime = 'text/rmd', encoding = 'base64')`">R Markdown source file (to produce this document)</a>
+
+
+
+```{r knitr setup, include=FALSE,  eval=TRUE, echo=FALSE, warning=FALSE}
+# knitr::opts_chunk$set(echo=TRUE, eval=TRUE, cache=TRUE, message=FALSE, warning=FALSE, comment="")
+
+library(knitr)
+options(width=300)
+knitr::opts_chunk$set(
+  fig.width = 10,
+  fig.height = 5,
+  fig.align = "center",
+  size = "tiny",
+  echo = TRUE, eval=TRUE,
+  warning = FALSE, message = FALSE,
+  results = TRUE, comment = "")
+# knitr::asis_output("\\footnotesize")
+
+```
+
+
+```{r Package , echo=FALSE}
+if(!require("knitr"))
+  {
+  install.packages('knitr')
+}
+if(!require("DT"))
+  {
+  install.packages('DT')
+  }
+library('knitr')
+if(!require("ggplot2"))
+  {
+  install.packages('ggplot2')
+  }
+library('knitr')
+library('DT')
+library('ggplot2')
+```
+
+#Mapping
+
+##Library size / mapped
+
+###Table
+
+
+```{r Importation des données, echo=FALSE}
+file.quality <- snakemake@depth_resume
+dataQ <- read.table(file=file.quality, sep="\t", header=TRUE)
+rownames(dataQ) <- dataQ$name
+datatableQ <- dataQ[,1:10]
+```
+
+```{R Visualisation des données brut, echo=FALSE}
+datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de qualité de tous les assemblages",
+colnames = c('Id', colnames(datatableQ)),
+extensions = 'Buttons', options = list(dom = 'Blfrtip',buttons = c('copy', 'csv', 'excel', 'pdf', 'print')))
+```

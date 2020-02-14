@@ -127,7 +127,7 @@ def output_final(wildcars):
                 })
     if build_stats:
         dico_final.update({
-                    "report" : f"{out_dir}/report.html",
+                    "report" : f"{out_dir}report.html",
                 })
     # print(dico_final)
     return dico_final
