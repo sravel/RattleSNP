@@ -826,10 +826,9 @@ rule report:
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             {sep*108}"""
-    shell:
+    script:
         """
-            module purge && module load bioinfo/R/3.4.3;
-            Rscript -e "rmarkdown::render('script/report.Rmd',quiet=FALSE)"  1>{log.output} 2>{log.error}
+           script/report.Rmd' 1>{log.output} 2>{log.error}
         
         """
 

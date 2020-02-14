@@ -2,6 +2,7 @@
 
 module purge
 module load system/python/3.7.3
+module load bioinfo/R/3.5.2
 module load system/graphviz/2.40.1
 
 cluster_config=`pwd`"/cluster_config.yaml"
