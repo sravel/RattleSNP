@@ -827,7 +827,12 @@ rule report:
                     - LOG output: {{log.output}}
             {sep*108}"""
     script:
-        "script/report.Rmd"
+        """
+            module load bioinfo/R/3.4.3
+            Rscript -e "rmarkdown::render('script/report.Rmd', output_file="{output.report}", quiet=TRUE)"
+        
+        """
+
 
 
 
