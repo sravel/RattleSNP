@@ -828,7 +828,7 @@ rule report:
             {sep*108}"""
     script:
         """
-           script/report.Rmd' 1>{log.output} 2>{log.error}
+           script/report.Rmd 1>{log.output} 2>{log.error}
         
         """
 
