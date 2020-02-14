@@ -828,8 +828,8 @@ rule report:
             {sep*108}"""
     shell:
         """
-            module load bioinfo/R/3.4.3
-            Rscript -e "rmarkdown::render('script/report.Rmd', output_file='{output.report}', quiet=FALSE)"  1>{log.output} 2>{log.error}
+            module purge && module load bioinfo/R/3.4.3;
+            Rscript -e "rmarkdown::render('script/report.Rmd',quiet=FALSE)"  1>{log.output} 2>{log.error}
         
         """
 

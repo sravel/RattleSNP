@@ -34,6 +34,7 @@ library('knitr')
 library('DT')
 library('ggplot2')
 ```
+
 ```{js logo-js, echo=FALSE}
 $(document).ready(function() {
   $('#header').parent().prepend('<div id=\"logo\"><img src=\"https://avatars3.githubusercontent.com/u/11534773?s=460&v=4\" style=\"position:absolute; top:0; right:20px; padding:30px; height:180px\"></div>');
@@ -55,12 +56,6 @@ knitr::opts_chunk$set(
 
 ```
 
-Test include from snakemake `r snakemake@input`.
-
-## Source
-<a download="report.Rmd" href="`r base64enc::dataURI(file = params$rmd, mime = 'text/rmd', encoding = 'base64')`">R Markdown source file (to produce this document)</a>
-
-
 &nbsp;
 
 # Mapping
@@ -69,11 +64,14 @@ Test include from snakemake `r snakemake@input`.
 
 ```{r Importation des données, echo=FALSE}
 
-file.quality <- snakemake@idxstats_resume
+file.quality <- snakemake@input$idxstats_resume
 datatableQ <- read.table(file=file.quality, sep="\t", header=TRUE)
+
+file.quality.depth <- snakemake@input$depth_resume
+datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
 ```
 
-```{R Visualisation des données brut, echo=FALSE}
+```{R Visualisation des taille de librairie, echo=FALSE}
 datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
           colnames = c("Sample",colnames(datatableQ[,2:4])),
           rownames = NULL,
@@ -91,4 +89,21 @@ datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taill
 ```
 
 
-## Library size / mapped
+## Stats mapped reads
+
+```{R Visualisation des Depth, echo=FALSE}
+datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
+          colnames = colnames(datatableDepth),
+          rownames = NULL,
+          extensions = 'Buttons', 
+          style = 'bootstrap', class = 'table table-striped table-bordered table-hover',
+          filter = list(position = 'top', clear = FALSE, plain = TRUE),
+          options = list(
+                         paging=TRUE, pageLength = 10, searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = FALSE, autoWidth = TRUE,
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                        dom = 'Blfrtip'
+                    )
+        )
+       #%>%
+      #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
+```
