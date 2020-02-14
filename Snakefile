@@ -808,7 +808,24 @@ rule report:
          depth_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
          idxstats_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
     output:
-        report = f"{out_dir}/report.html",
+        report = f"{out_dir}report.html",
+    log:
+            error =  f'{log_dir}report/report.e',
+            output = f'{log_dir}report/report.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - csv : {{input.depth_resume}}
+                    - csv : {{input.idxstats_resume}}
+                Output:
+                    - report : {{output.report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
     script:
         "./script/report.Rmd"
 
