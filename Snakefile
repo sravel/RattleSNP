@@ -829,7 +829,7 @@ rule report:
     script:
         """
             module load bioinfo/R/3.4.3
-            Rscript -e "rmarkdown::render('script/report.Rmd', output_file="{output.report}", quiet=TRUE)"
+            Rscript -e "rmarkdown::render('script/report.Rmd', output_file='{output.report}', quiet=FALSE)"  1>{log.output} 2>{log.error}
         
         """
 
