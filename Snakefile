@@ -827,7 +827,7 @@ rule report:
                     - LOG output: {{log.output}}
             {sep*108}"""
     script:
-        "/work/sravel/mapping/script/report.Rmd"
+        "script/report.Rmd"
 
 
 
