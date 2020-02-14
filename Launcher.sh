@@ -1,5 +1,5 @@
 #!/bin/bash
-#rm snakejob.*
+
 module purge
 module load system/python/3.7.3
 module load system/graphviz/2.40.1
