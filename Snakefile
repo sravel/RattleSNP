@@ -127,8 +127,7 @@ def output_final(wildcars):
                 })
     if build_stats:
         dico_final.update({
-                    "depth_resume" : f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
-                    "idxstats_resume" : f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
+                    "report" : f"{out_dir}/report.html",
                 })
     # print(dico_final)
     return dico_final
@@ -809,7 +808,7 @@ rule report:
          depth_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
          idxstats_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
     output:
-        f"{out_dir}/report.html",
+        report = f"{out_dir}/report.html",
     script:
         "./script/report.Rmd"
 
