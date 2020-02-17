@@ -33,6 +33,11 @@ if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
 library('knitr')
 library('DT')
 library('ggplot2')
+options(DT.options = list(
+                         paging=TRUE, pageLength = 10, searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = FALSE, autoWidth = TRUE,
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+                        dom = 'Blfrtip'
+                    ))
 ```
 
 ```{js logo-js, echo=FALSE}

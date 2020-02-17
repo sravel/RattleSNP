@@ -387,9 +387,9 @@ rule bwa_samse_sort_bam:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                bwa samse -r"{params.rg}"{input.fasta} {input.sai_R1} {input.R1} 2>{log.error} |
-                samtools view -@ {threads} -bh 2>{log.error} |
-                samtools sort -@ {threads} -o {output.bam_file} 1>{log.output} 2>{log.error}
+                (bwa samse -r"{params.rg}"{input.fasta} {input.sai_R1} {input.R1}  |
+                samtools view -@ {threads} -bh  |
+                samtools sort -@ {threads} -o {output.bam_file}) 1>{log.output} 2>{log.error}
             """
 
 rule bwa_sampe_sort_bam:
@@ -426,9 +426,9 @@ rule bwa_sampe_sort_bam:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                bwa sampe -r"{params.rg}" {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} 2>{log.error} |
-                samtools view -@ {threads} -bh 2>{log.error} |
-                samtools sort -@ {threads} -o {output.bam_file} 1>{log.output} 2>{log.error}
+                (bwa sampe -r"{params.rg}" {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} |
+                samtools view -@ {threads} -bh |
+                samtools sort -@ {threads} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
             """
 
 rule merge_bam_directories:
@@ -804,6 +804,7 @@ rule bcftools_concat:
         """
 
 rule report:
+    threads: get_threads('report', 1)
     input:
          depth_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
          idxstats_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
