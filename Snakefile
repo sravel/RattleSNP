@@ -194,7 +194,7 @@ rule run_atropos_PE:
             R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS.fastq.gz",
             R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS.fastq.gz"
     params:
-            other_options = config["PARAMSTOOLS"]["ATROPOSPE"]
+            other_options = config["PARAMS_TOOLS"]["ATROPOS_PE"]
     log :
             error =  f'{log_dir}run_atropos_PE/{{samples}}.e',
             output = f'{log_dir}run_atropos_PE/{{samples}}.o'
@@ -226,7 +226,7 @@ rule run_atropos_SE:
     output:
             R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS.fastq.gz"
     params:
-            other_options = config["PARAMSTOOLS"]["ATROPOSSE"]
+            other_options = config["PARAMS_TOOLS"]["ATROPOS_SE"]
     log :
             error =  f'{log_dir}run_atropos_SE/{{samples}}.e',
             output = f'{log_dir}run_atropos_SE/{{samples}}.o'
@@ -259,7 +259,7 @@ rule run_fastqc_PE:
             R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS_fastqc.html",
             R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS_fastqc.html"
     params:
-            other_options = config["PARAMSTOOLS"]["FASTQC"]
+            other_options = config["PARAMS_TOOLS"]["FASTQC"]
     log :
             error =  f'{log_dir}run_fastqc_PE/{{samples}}.e',
             output = f'{log_dir}run_fastqc_PE/{{samples}}.o'
@@ -291,7 +291,7 @@ rule run_fastqc_SE:
     output:
             R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS_fastqc.html"
     params:
-            other_options = config["PARAMSTOOLS"]["FASTQC"]
+            other_options = config["PARAMS_TOOLS"]["FASTQC"]
     log :
             error =  f'{log_dir}run_fastqc_SE/{{samples}}.e',
             output = f'{log_dir}run_fastqc_SE/{{samples}}.o'
@@ -325,7 +325,7 @@ rule run_bwa_aln_PE:
             sai_R1 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R1.BWAALN.sai"),
             sai_R2 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R2.BWAALN.sai")
     params:
-            other_options = config["PARAMSTOOLS"]["BWAALN"]
+            other_options = config["PARAMS_TOOLS"]["BWA_ALN"]
     log:
             error =  f'{log_dir}run_bwa_aln_PE/{{samples}}.e',
             output = f'{log_dir}run_bwa_aln_PE/{{samples}}.o'
@@ -360,7 +360,7 @@ rule run_bwa_aln_SE:
     output:
             sai_R1 = temp(f"{out_dir}1_mapping/single/{{samples}}_R1.BWAALN.sai"),
     params:
-            other_options = config["PARAMSTOOLS"]["BWAALN"]
+            other_options = config["PARAMS_TOOLS"]["BWA_ALN"]
     log:
             error =  f'{log_dir}run_bwa_aln_SE/{{samples}}.e',
             output = f'{log_dir}run_bwa_aln_SE/{{samples}}.o'
@@ -394,9 +394,9 @@ rule bwa_samse_sort_bam:
             bam_file = f"{out_dir}1_mapping/single/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
-            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
-            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+            other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMSE"],
+            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
             error =  f'{log_dir}bwa_samse_sort_bam/{{samples}}.e',
             output = f'{log_dir}bwa_samse_sort_bam/{{samples}}.o'
@@ -435,9 +435,9 @@ rule bwa_sampe_sort_bam:
             bam_file = out_dir+'1_mapping/paired/{samples}.bam'
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
-            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
-            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
             error =  f'{log_dir}bwa_sampe_sort_bam/{{samples}}.e',
             output = f'{log_dir}bwa_sampe_sort_bam/{{samples}}.o'
@@ -474,9 +474,9 @@ rule bwa_mem_PE_sort_bam:
             bam_file = out_dir+'1_mapping/paired/{samples}.bam'
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
-            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
-            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
             error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
             output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
@@ -512,9 +512,9 @@ rule bwa_mem_SE_sort_bam:
             bam_file = out_dir+'1_mapping/paired/{samples}.bam'
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
-            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
-            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
             error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
             output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
@@ -632,7 +632,7 @@ rule samtools_depth:
     output:
             txt_file = f"{out_dir}2_mapping_stats/all/{{samples}}_DEPTH.txt"
     params:
-            other_options = config["PARAMSTOOLS"]["SAMTOOLSDEPTH"]
+            other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
     log:
             error =  f'{log_dir}samtools_depth/{{samples}}.e',
             output = f'{log_dir}samtools_depth/{{samples}}.o'
@@ -718,7 +718,7 @@ rule picardTools_mark_duplicates:
             bam_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.bam",
             txt_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.metrics"
     params:
-            other_options = config["PARAMSTOOLS"]["PICARDTOOLSMARKDUPLICATES"]
+            other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARKDUPLICATES"]
     log:
             error =  f'{log_dir}picardTools_mark_duplicates/{{samples}}.e',
             output = f'{log_dir}picardTools_mark_duplicates/{{samples}}.o'
@@ -782,7 +782,7 @@ rule gatk_HaplotypeCaller:
     params:
             java_mem=cluster_config["gatk_HaplotypeCaller"]['javaMem'],                  # TODO add argument to cluster_config
             interval = "{chromosomes}",
-            other_options = config["PARAMSTOOLS"]["GATK_HAPLOTYPECALLER"]
+            other_options = config["PARAMS_TOOLS"]["GATK_HAPLOTYPECALLER"]
     log:
             error =  f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.e',
             output = f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.o'
@@ -827,7 +827,7 @@ rule gatk_GenomicsDBImport:
             java_mem=cluster_config["gatk_GenomicsDBImport"]['javaMem'],                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
             str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}")),
-            other_options = config["PARAMSTOOLS"]["GATK_GENOMICSDBIMPORT"]
+            other_options = config["PARAMS_TOOLS"]["GATK_GENOMICSDBIMPORT"]
     log:
             error =  f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.o'
@@ -865,7 +865,7 @@ rule gatk_GenotypeGVCFs_merge:
             vcf_file = f'{out_dir}3_snp_calling/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
     params:
             java_mem=cluster_config["gatk_GenotypeGVCFs_merge"]['javaMem'],              # TODO add argument to cluster_config
-            other_options = config["PARAMSTOOLS"]["GATK_GENOTYPEGVCFS"]
+            other_options = config["PARAMS_TOOLS"]["GATK_GENOTYPEGVCFS"]
     log:
             error =  f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.o'

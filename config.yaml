@@ -34,7 +34,7 @@ MODULES:
 
 ############################
 # Misc. options for programs
-PARAMSTOOLS:
+PARAMS_TOOLS:
     "ATROPOS_SE": "--minimum-length 35  -q 20  -u 8  -O 10"
     "ATROPOS_PE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
     "FASTQC": ""
