@@ -391,7 +391,7 @@ rule bwa_samse_sort_bam:
             R1 = rules.run_bwa_aln_SE.input.R1,
             sai_R1 = rules.run_bwa_aln_SE.output.sai_R1
     output:
-            bam_file = f"{out_dir}1_mapping/single/{{samples}}.bam"
+            bam_file = f"{out_dir}1_mapping/single/{mapping_tools}/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMSE"],
@@ -432,10 +432,10 @@ rule bwa_sampe_sort_bam:
             sai_R1 = rules.run_bwa_aln_PE.output.sai_R1,
             sai_R2 = rules.run_bwa_aln_PE.output.sai_R2
     output:
-            bam_file = out_dir+'1_mapping/paired/{samples}.bam'
+            bam_file = f"{out_dir}1_mapping/paired/{mapping_tools}/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMPE"],
             other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
             other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
@@ -471,10 +471,10 @@ rule bwa_mem_PE_sort_bam:
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
             R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
     output:
-            bam_file = out_dir+'1_mapping/paired/{samples}.bam'
+            bam_file =  f"{out_dir}1_mapping/paired/{mapping_tools}/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
             other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
             other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
@@ -509,10 +509,10 @@ rule bwa_mem_SE_sort_bam:
             fasta = reference_file,
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1
     output:
-            bam_file = out_dir+'1_mapping/paired/{samples}.bam'
+            bam_file = f"{out_dir}1_mapping/single/{mapping_tools}/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWASAMSE"],
+            other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
             other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
             other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
@@ -718,7 +718,7 @@ rule picardTools_mark_duplicates:
             bam_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.bam",
             txt_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.metrics"
     params:
-            other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARKDUPLICATES"]
+            other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARK_DUPLICATES"]
     log:
             error =  f'{log_dir}picardTools_mark_duplicates/{{samples}}.e',
             output = f'{log_dir}picardTools_mark_duplicates/{{samples}}.o'
