@@ -14,8 +14,8 @@ pp = pprint.PrettyPrinter(indent=4)
 # NOTE pas de caractere speciaux entre 2 wildcards
 
 # --- Importing Configuration Files --- #
-configfile: 'config.yaml'
-cluster_config: "cluster_config.yaml"
+#configfile: 'config.yaml'
+#cluster_config: "cluster_config.yaml"
 
 # pp.pprint(cluster_config["gatk_HaplotypeCaller"]["javaMem"])
 # pp.pprint(cluster_config)
@@ -28,11 +28,14 @@ basename_reference = Path(reference_file).stem
 cleanning =  config["cleanning"]
 build_stats =  config["build_stats"]
 
+mapping_tools = config["mapping_tools"]
+
 # print(basename_reference)
 out_dir = config["DATA"]["directories"]["out_dir"]
 log_dir = f"{out_dir}LOGS/"
 # to lunch separator
 sep="#"
+BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
 #############################################
 # use threads define in cluster_config rule or rule default or default in snakefile
@@ -83,14 +86,25 @@ def get_files_path(wildcards):
     :return: dict
     """
     if Path(f"{samples_dir}{wildcards.samples}_R2.fastq.gz").exists():
-        return {"bam_in" : rules.bwa_sampe_sort_bam.output.bam_file,
-                "R1": rules.bwa_sampe_sort_bam.input.R1,
-                "R2": rules.bwa_sampe_sort_bam.input.R2
-                }
+        if mapping_tools in ["sampe", "samse"]:
+            return {"bam_in" : rules.bwa_sampe_sort_bam.output.bam_file,
+                    "R1": rules.bwa_sampe_sort_bam.input.R1,
+                    "R2": rules.bwa_sampe_sort_bam.input.R2
+                    }
+        elif mapping_tools in ["mem"]:
+            return {"bam_in" : rules.bwa_mem_PE_sort_bam.output.bam_file,
+                    "R1": rules.bwa_mem_PE_sort_bam.input.R1,
+                    "R2": rules.bwa_mem_PE_sort_bam.input.R2
+                    }
     else:
-        return {"bam_in" : rules.bwa_samse_sort_bam.output.bam_file,
-                "R1": rules.bwa_samse_sort_bam.input.R1
-                }
+        if mapping_tools in ["sampe", "samse"]:
+            return {"bam_in" : rules.bwa_samse_sort_bam.output.bam_file,
+                    "R1": rules.bwa_samse_sort_bam.input.R1
+                    }
+        elif mapping_tools in ["mem"]:
+            return {"bam_in" : rules.bwa_mem_SE_sort_bam.output.bam_file,
+                    "R1": rules.bwa_mem_SE_sort_bam.input.R1,
+                    }
 #*###############################################################################
 SAMPLES, = glob_wildcards(samples_dir+"{samples}_R1.fastq.gz", followlinks=True)
 CHROMOSOMES = get_list_chromosome_names(reference_file)
@@ -147,7 +161,7 @@ rule bwa_index:
     input:
             fasta = reference_file
     output:
-            sa_file = reference_file+".sa"
+            index = expand(f'{reference_file}.{{suffix}}',suffix=BWA_INDEX)
     log :
             error =  f'{log_dir}bwa_index/{basename_reference}.e',
             output = f'{log_dir}bwa_index/{basename_reference}.o'
@@ -158,7 +172,7 @@ rule bwa_index:
                 Input:
                     - Fasta : {{input.fasta}}
                 Output:
-                    - sa_file: {{output.sa_file}}
+                    - sa_file: {{output.index}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
@@ -179,6 +193,8 @@ rule run_atropos_PE:
     output:
             R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS.fastq.gz",
             R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS.fastq.gz"
+    params:
+            other_options = config["PARAMSTOOLS"]["ATROPOSPE"]
     log :
             error =  f'{log_dir}run_atropos_PE/{{samples}}.e',
             output = f'{log_dir}run_atropos_PE/{{samples}}.o'
@@ -198,7 +214,7 @@ rule run_atropos_PE:
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell: config["MODULES"]["ATROPOS"]+"""
-        atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSPE"]+""" -o {output.R1} -p {output.R2} -pe1 {input.R1} -pe2 {input.R2}  1>{log.output} 2>{log.error}
+        atropos trim --threads {threads} {params.other_options} -o {output.R1} -p {output.R2} -pe1 {input.R1} -pe2 {input.R2}  1>{log.output} 2>{log.error}
     """
 
 # 1=atropos
@@ -208,7 +224,9 @@ rule run_atropos_SE:
     input:
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz",
     output:
-            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS.fastq.gz",
+            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS.fastq.gz"
+    params:
+            other_options = config["PARAMSTOOLS"]["ATROPOSSE"]
     log :
             error =  f'{log_dir}run_atropos_SE/{{samples}}.e',
             output = f'{log_dir}run_atropos_SE/{{samples}}.o'
@@ -227,7 +245,7 @@ rule run_atropos_SE:
             {sep*108}"""
     shell:
             config["MODULES"]["ATROPOS"]+"""
-                atropos --threads {threads} """+config["PARAMSTOOLS"]["ATROPOSSE"]+""" -o {output.R1} -se {input.R1}  1>{log.output} 2>{log.error}
+                atropos trim --threads {threads} {params.other_options} -o {output.R1} -se {input.R1}  1>{log.output} 2>{log.error}
             """
 
 # 2=fastqc
@@ -240,6 +258,8 @@ rule run_fastqc_PE:
     output:
             R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS_fastqc.html",
             R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS_fastqc.html"
+    params:
+            other_options = config["PARAMSTOOLS"]["FASTQC"]
     log :
             error =  f'{log_dir}run_fastqc_PE/{{samples}}.e',
             output = f'{log_dir}run_fastqc_PE/{{samples}}.o'
@@ -260,7 +280,7 @@ rule run_fastqc_PE:
             {sep*108}"""
     shell:
             config["MODULES"]["FASTQC"]+"""
-                fastqc -t {threads} {input.R1} {input.R2}  1>{log.output} 2>{log.error}
+                fastqc -t {threads} {params.other_options} {input.R1} {input.R2}  1>{log.output} 2>{log.error}
             """
 
 rule run_fastqc_SE:
@@ -269,7 +289,9 @@ rule run_fastqc_SE:
     input:
             R1 = rules.run_atropos_SE.output.R1
     output:
-            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS_fastqc.html",
+            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS_fastqc.html"
+    params:
+            other_options = config["PARAMSTOOLS"]["FASTQC"]
     log :
             error =  f'{log_dir}run_fastqc_SE/{{samples}}.e',
             output = f'{log_dir}run_fastqc_SE/{{samples}}.o'
@@ -287,7 +309,7 @@ rule run_fastqc_SE:
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell: config["MODULES"]["FASTQC"]+"""
-        fastqc -t {threads} {input.R1}  1>{log.output} 2>{log.error}
+        fastqc -t {threads}  {params.other_options} {input.R1}  1>{log.output} 2>{log.error}
     """
 
 # 3=bwaAln
@@ -296,12 +318,14 @@ rule run_bwa_aln_PE:
     threads: get_threads('run_bwa_aln_PE', 1)
     input:
             fasta = reference_file,
-            index = rules.bwa_index.output.sa_file,
+            index = rules.bwa_index.output.index,
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
             R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
     output:
             sai_R1 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R1.BWAALN.sai"),
             sai_R2 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R2.BWAALN.sai")
+    params:
+            other_options = config["PARAMSTOOLS"]["BWAALN"]
     log:
             error =  f'{log_dir}run_bwa_aln_PE/{{samples}}.e',
             output = f'{log_dir}run_bwa_aln_PE/{{samples}}.o'
@@ -323,18 +347,20 @@ rule run_bwa_aln_PE:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"""
-                bwa aln -t {threads} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error} &&
-                bwa aln -t {threads} -f {output.sai_R2} {input.fasta} {input.R2} 1>{log.output} 2>{log.error}
+                bwa aln -t {threads} {params.other_options} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error} &&
+                bwa aln -t {threads} {params.other_options} -f {output.sai_R2} {input.fasta} {input.R2} 1>{log.output} 2>{log.error}
             """
 
 rule run_bwa_aln_SE:
     """make bwa aln for all samples SE on reference"""
     threads: get_threads('run_bwa_aln_SE', 1)
     input: 	fasta = reference_file,
-            index = rules.bwa_index.output.sa_file,
+            index = rules.bwa_index.output.index,
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_SE.output.R1
     output:
             sai_R1 = temp(f"{out_dir}1_mapping/single/{{samples}}_R1.BWAALN.sai"),
+    params:
+            other_options = config["PARAMSTOOLS"]["BWAALN"]
     log:
             error =  f'{log_dir}run_bwa_aln_SE/{{samples}}.e',
             output = f'{log_dir}run_bwa_aln_SE/{{samples}}.o'
@@ -354,20 +380,23 @@ rule run_bwa_aln_SE:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"""
-                bwa aln -t {threads} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error}
+                bwa aln -t {threads} {params.other_options} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error}
             """
 
 rule bwa_samse_sort_bam:
     """make bwa samse for all samples SE on reference"""
     threads: get_threads('bwa_samse_sort_bam', 1)
     input: 	fasta = reference_file,
-            index = rules.bwa_index.output.sa_file,
+            index = rules.bwa_index.output.index,
             R1 = rules.run_bwa_aln_SE.input.R1,
             sai_R1 = rules.run_bwa_aln_SE.output.sai_R1
     output:
             bam_file = f"{out_dir}1_mapping/single/{{samples}}.bam"
     params:
-            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina"
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
+            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
     log:
             error =  f'{log_dir}bwa_samse_sort_bam/{{samples}}.e',
             output = f'{log_dir}bwa_samse_sort_bam/{{samples}}.o'
@@ -387,9 +416,9 @@ rule bwa_samse_sort_bam:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                (bwa samse -r"{params.rg}"{input.fasta} {input.sai_R1} {input.R1}  |
-                samtools view -@ {threads} -bh  |
-                samtools sort -@ {threads} -o {output.bam_file}) 1>{log.output} 2>{log.error}
+                (bwa samse -r"{params.rg}" {params.other_options_bwa} {input.fasta} {input.sai_R1} {input.R1}  |
+                samtools view -@ {threads} {params.other_options_samtools_view}  |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file}) 1>{log.output} 2>{log.error}
             """
 
 rule bwa_sampe_sort_bam:
@@ -397,7 +426,7 @@ rule bwa_sampe_sort_bam:
     threads: get_threads('bwa_sampe_sort_bam', 1)
     input:
             fasta = reference_file,
-            index = rules.bwa_index.output.sa_file,
+            index = rules.bwa_index.output.index,
             R1 = rules.run_bwa_aln_PE.input.R1,
             R2 = rules.run_bwa_aln_PE.input.R2,
             sai_R1 = rules.run_bwa_aln_PE.output.sai_R1,
@@ -405,7 +434,10 @@ rule bwa_sampe_sort_bam:
     output:
             bam_file = out_dir+'1_mapping/paired/{samples}.bam'
     params:
-            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina"
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
+            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
     log:
             error =  f'{log_dir}bwa_sampe_sort_bam/{{samples}}.e',
             output = f'{log_dir}bwa_sampe_sort_bam/{{samples}}.o'
@@ -426,10 +458,86 @@ rule bwa_sampe_sort_bam:
             {sep*108}"""
     shell:
             config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                (bwa sampe -r"{params.rg}" {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} |
-                samtools view -@ {threads} -bh |
-                samtools sort -@ {threads} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+                (bwa sampe -r"{params.rg}" {params.other_options_bwa} {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} |
+                samtools view -@ {threads} {params.other_options_samtools_view} |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
             """
+rule bwa_mem_PE_sort_bam:
+    """make bwa mem for all samples PE on reference"""
+    threads: 2
+    input:
+            index = rules.bwa_index.output.index,
+            fasta = reference_file,
+            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
+            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
+    output:
+            bam_file = out_dir+'1_mapping/paired/{samples}.bam'
+    params:
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
+            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+    log:
+            error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - Fasta : {{input.fasta}}
+                    - R1: {{input.R1}}
+                    - R2: {{input.R2}}
+                Output:
+                    - Bam: {{output.bam_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell:
+        config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
+                bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} |
+                samtools view -@ {threads} {params.other_options_samtools_view} |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+        """
+rule bwa_mem_SE_sort_bam:
+    """make bwa mem for all samples SE on reference"""
+    threads: 2
+    input:
+            index = rules.bwa_index.output.index,
+            fasta = reference_file,
+            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1
+    output:
+            bam_file = out_dir+'1_mapping/paired/{samples}.bam'
+    params:
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["PARAMSTOOLS"]["BWASAMSE"],
+            other_options_samtools_view = config["PARAMSTOOLS"]["SAMTOOLSVIEW"],
+            other_options_samtools_sort = config["PARAMSTOOLS"]["SAMTOOLSSORT"]
+    log:
+            error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - Fasta : {{input.fasta}}
+                    - R1: {{input.R1}}
+                Output:
+                    - Bam: {{output.bam_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell:
+        config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
+                bwa mem -t {threads} {input.fasta} {input.R1} |
+                samtools view -@ {threads} {params.other_options_samtools_view} |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+        """
 
 rule merge_bam_directories:
     """Merge paired and single on same directory and index"""
@@ -459,7 +567,7 @@ rule merge_bam_directories:
     shell:
             config["MODULES"]["SAMTOOLS"]+"""
                 ln -s {input.bam_in} {output.bam_all} 1>{log.output} 2>{log.error}
-                samtools index {output.bam_all} 1>>{log.output} 2>>{log.error}
+                samtools index -@ {threads} {output.bam_all} 1>>{log.output} 2>>{log.error}
             """
 ####### Stats
 rule samtools_idxstats:
@@ -523,6 +631,8 @@ rule samtools_depth:
             bam = rules.merge_bam_directories.output.bam_all
     output:
             txt_file = f"{out_dir}2_mapping_stats/all/{{samples}}_DEPTH.txt"
+    params:
+            other_options = config["PARAMSTOOLS"]["SAMTOOLSDEPTH"]
     log:
             error =  f'{log_dir}samtools_depth/{{samples}}.e',
             output = f'{log_dir}samtools_depth/{{samples}}.o'
@@ -541,7 +651,7 @@ rule samtools_depth:
             {sep*108}"""
     shell:
             config["MODULES"]["SAMTOOLS"]+"""
-                samtools depth {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+                samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
             """
 
 rule bam_stats_to_csv:
@@ -607,6 +717,8 @@ rule picardTools_mark_duplicates:
     output:
             bam_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.bam",
             txt_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.metrics"
+    params:
+            other_options = config["PARAMSTOOLS"]["PICARDTOOLSMARKDUPLICATES"]
     log:
             error =  f'{log_dir}picardTools_mark_duplicates/{{samples}}.e',
             output = f'{log_dir}picardTools_mark_duplicates/{{samples}}.o'
@@ -625,7 +737,7 @@ rule picardTools_mark_duplicates:
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell: config["MODULES"]["PICARDTOOLS"]+"""
-        java -jar $PICARDPATH/picard.jar MarkDuplicates CREATE_INDEX=TRUE VALIDATION_STRINGENCY=SILENT INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
+        java -jar $PICARDPATH/picard.jar MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
     """
 
 ########################## SNP calling
@@ -668,8 +780,9 @@ rule gatk_HaplotypeCaller:
     output:
             vcf_file = f"{out_dir}3_snp_calling/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
-            java_mem="4g",                  # TODO add argument to cluster_config
-            interval = "{chromosomes}"
+            java_mem=cluster_config["gatk_HaplotypeCaller"]['javaMem'],                  # TODO add argument to cluster_config
+            interval = "{chromosomes}",
+            other_options = config["PARAMSTOOLS"]["GATK_HAPLOTYPECALLER"]
     log:
             error =  f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.e',
             output = f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.o'
@@ -691,10 +804,8 @@ rule gatk_HaplotypeCaller:
             {sep*108}"""
     shell: config["MODULES"]["GATK4"]+"""
     gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
-    --emit-ref-confidence GVCF \
-    --output-mode EMIT_ALL_ACTIVE_SITES \
+    {params.other_options} \
     --native-pair-hmm-threads {threads} \
-    -ploidy 1 \
     -L {params.interval} 1>{log.output} 2>{log.error}
     """
 
@@ -713,9 +824,10 @@ rule gatk_GenomicsDBImport:
     output:
             db = directory(f"{out_dir}4_DB_import/DB_{{chromosomes}}"),
     params:
-            java_mem="8g",                   # TODO add argument to cluster_config
+            java_mem=cluster_config["gatk_GenomicsDBImport"]['javaMem'],                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
-            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}"))
+            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}")),
+            other_options = config["PARAMSTOOLS"]["GATK_GENOMICSDBIMPORT"]
     log:
             error =  f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.o'
@@ -738,6 +850,7 @@ rule gatk_GenomicsDBImport:
     shell: config["MODULES"]["GATK4"]+"""
     gatk GenomicsDBImport --java-options "-Xmx{params.java_mem}" -R {input.reference} {params.str_join} \
     --genomicsdb-workspace-path {output.db} \
+    {params.other_options} \
     -L {params.interval} 1>{log.output} 2>{log.error}
     """
 
@@ -751,7 +864,8 @@ rule gatk_GenotypeGVCFs_merge:
     output:
             vcf_file = f'{out_dir}3_snp_calling/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
     params:
-            java_mem="30g",              # TODO add argument to cluster_config
+            java_mem=cluster_config["gatk_GenotypeGVCFs_merge"]['javaMem'],              # TODO add argument to cluster_config
+            other_options = config["PARAMSTOOLS"]["GATK_GENOTYPEGVCFS"]
     log:
             error =  f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.o'
@@ -772,7 +886,7 @@ rule gatk_GenotypeGVCFs_merge:
             {sep*108}"""
     shell:
         config["MODULES"]["GATK4"]+"""
-            gatk GenotypeGVCFs --java-options "-Xmx{params.java_mem}" -R {input.reference} -V gendb://{input.db} -O {output.vcf_file} -new-qual 1>{log.output} 2>{log.error}
+            gatk GenotypeGVCFs --java-options "-Xmx{params.java_mem}" -R {input.reference} -V gendb://{input.db} -O {output.vcf_file} {params.other_options} 1>{log.output} 2>{log.error}
         """
 
 rule bcftools_concat:
@@ -785,6 +899,33 @@ rule bcftools_concat:
     log:
             error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
             output = f'{log_dir}bcftools_concat/bcftools_concat.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - vcf : {{input.vcf_file}}
+                Output:
+                    - vcf : {{output.vcf_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell:
+        config["MODULES"]["BCFTOOLS"]+"""
+            bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z 1>{log.output} 2>{log.error}
+        """
+
+rule vcftools_filter:
+    threads: get_threads('vcftools_filter', 1)
+    input:
+            vcf_file_all = rules.bcftools_concat.output.vcf_file
+    output:
+            vcf_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
+    log:
+            error =  f'{log_dir}vcftools_filter/vcftools_filter.e',
+            output = f'{log_dir}vcftools_filter/vcftools_filter.o'
     message:
             f"""
             {sep*108}

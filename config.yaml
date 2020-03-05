@@ -16,6 +16,8 @@
 cleanning: False
 # boolean, add stats mapping report if True
 build_stats: True
+#avail: ["mem","sampe","samse"] please select only bwa tools for moment
+mapping_tools: "mem"
 ##############################
 # Location of various software
 #
@@ -33,6 +35,16 @@ MODULES:
 ############################
 # Misc. options for programs
 PARAMSTOOLS:
-    "ATROPOSSE": "--minimum-length 35  -q 20  -u 8  -O 10"
-    "ATROPOSPE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
-    "samtoolsview": ""
+    "ATROPOS_SE": "--minimum-length 35  -q 20  -u 8  -O 10"
+    "ATROPOS_PE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
+    "FASTQC": ""
+    "BWA_ALN": ""
+    "BWA_SAMSE": ""
+    "BWA_MEM": ""
+    "SAMTOOLS_VIEW": "-bh"
+    "SAMTOOLS_SORT": ""
+    "SAMTOOLS_DEPTH": ""
+    "PICARDTOOLS_MARK_DUPLICATES": "CREATE_INDEX=TRUE VALIDATION_STRINGENCY=SILENT"
+    "GATK_HAPLOTYPECALLER": "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
+    "GATK_GENOMICSDBIMPORT": ""
+    "GATK_GENOTYPEGVCFS": "-new-qual"

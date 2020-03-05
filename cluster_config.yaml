@@ -4,8 +4,8 @@ __default__:
     mem: "-l mem_free=4G"
     export_env: "-V"
     cwd: "-cwd"
-    logerror: "-e {log.error}"
-    log: "-o {log.output}"
+    logerror: "-e {log.error}.cluster"
+    log: "-o {log.output}.cluster"
     queue: "-q normal.q"
 
 bwa_index:
@@ -39,6 +39,14 @@ bwa_samse_sort_bam:
     mem: "-l mem_free=4G"
 
 bwa_sampe_sort_bam:
+    threads: 6
+    mem: "-l mem_free=4G"
+
+bwa_mem_PE_sort_bam:
+    threads: 6
+    mem: "-l mem_free=4G"
+
+bwa_mem_SE_sort_bam:
     threads: 6
     mem: "-l mem_free=4G"
 
