@@ -51,7 +51,7 @@ bwa_mem_SE_sort_bam:
     mem: "-l mem_free=4G"
 
 merge_bam_directories:
-    queue: "short.q"
+    queue: "-q short.q"
 
 samtools_idxstats:
     threads: 4
@@ -74,7 +74,7 @@ picardTools_mark_duplicates:
     queue: "-q normal.q"
 
 gatk_HaplotypeCaller:
-    threads: 6
+    threads: 4
     javaMem: "4g"
     mem: "-l mem_free=4G"
     queue: "-q long.q"
@@ -90,8 +90,8 @@ gatk_GenotypeGVCFs_merge:
     queue: "-q long.q"
 
 create_sequence_dict:
-    javaMem: "8g"
-    mem: "-l mem_free=10G"
+    javaMem: "10g"
+    mem: "-l mem_free=30G"
 
 bcftools_concat:
     threads: 10
