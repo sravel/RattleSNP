@@ -129,10 +129,10 @@ def output_final(wildcars):
     """
     FINAL RULE
     :param wildcars:
-    :return:
+    :return: "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz'
     """
     dico_final = {
-                    "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz'
+
                 }
     if cleanning:
         dico_final.update({
@@ -391,7 +391,7 @@ rule bwa_samse_sort_bam:
             R1 = rules.run_bwa_aln_SE.input.R1,
             sai_R1 = rules.run_bwa_aln_SE.output.sai_R1
     output:
-            bam_file = f"{out_dir}1_mapping/single/{mapping_tools}/{{samples}}.bam"
+            bam_file = f"{out_dir}1_mapping/single/samse/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMSE"],
@@ -432,7 +432,7 @@ rule bwa_sampe_sort_bam:
             sai_R1 = rules.run_bwa_aln_PE.output.sai_R1,
             sai_R2 = rules.run_bwa_aln_PE.output.sai_R2
     output:
-            bam_file = f"{out_dir}1_mapping/paired/{mapping_tools}/{{samples}}.bam"
+            bam_file = f"{out_dir}1_mapping/paired/sampe/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMPE"],
@@ -471,7 +471,7 @@ rule bwa_mem_PE_sort_bam:
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
             R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
     output:
-            bam_file =  f"{out_dir}1_mapping/paired/{mapping_tools}/{{samples}}.bam"
+            bam_file =  f"{out_dir}1_mapping/paired/mem/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
@@ -509,7 +509,7 @@ rule bwa_mem_SE_sort_bam:
             fasta = reference_file,
             R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1
     output:
-            bam_file = f"{out_dir}1_mapping/single/{mapping_tools}/{{samples}}.bam"
+            bam_file = f"{out_dir}1_mapping/single/mem/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
