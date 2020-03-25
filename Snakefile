@@ -129,10 +129,10 @@ def output_final(wildcars):
     """
     FINAL RULE
     :param wildcars:
-    :return: "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz'
+    :return:
     """
     dico_final = {
-
+                    "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz'
                 }
     if cleanning:
         dico_final.update({
@@ -478,8 +478,8 @@ rule bwa_mem_PE_sort_bam:
             other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
             other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
-            error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
-            output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
+            error =  f'{log_dir}bwa_mem_PE_sort_bam/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_PE_sort_bam/{{samples}}.o'
     message:
             f"""
             {sep*108}
@@ -497,7 +497,7 @@ rule bwa_mem_PE_sort_bam:
             {sep*108}"""
     shell:
         config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} |
+                (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
                 samtools view -@ {threads} {params.other_options_samtools_view} |
                 samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
         """
@@ -516,8 +516,8 @@ rule bwa_mem_SE_sort_bam:
             other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
             other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
-            error =  f'{log_dir}bwa_mem_PE/{{samples}}.e',
-            output = f'{log_dir}bwa_mem_PE/{{samples}}.o'
+            error =  f'{log_dir}bwa_mem_SE_sort_bam/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_SE_sort_bam/{{samples}}.o'
     message:
             f"""
             {sep*108}
@@ -534,7 +534,7 @@ rule bwa_mem_SE_sort_bam:
             {sep*108}"""
     shell:
         config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                bwa mem -t {threads} {input.fasta} {input.R1} |
+                (bwa mem -t {threads} {input.fasta} {input.R1} -R '{params.rg}'|
                 samtools view -@ {threads} {params.other_options_samtools_view} |
                 samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
         """
@@ -780,7 +780,7 @@ rule gatk_HaplotypeCaller:
     output:
             vcf_file = f"{out_dir}3_snp_calling/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
-            java_mem=cluster_config["gatk_HaplotypeCaller"]['javaMem'],                  # TODO add argument to cluster_config
+            java_mem="8g",                  # TODO add argument to cluster_config
             interval = "{chromosomes}",
             other_options = config["PARAMS_TOOLS"]["GATK_HAPLOTYPECALLER"]
     log:
@@ -804,7 +804,7 @@ rule gatk_HaplotypeCaller:
             {sep*108}"""
     shell: config["MODULES"]["GATK4"]+"""
     gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
-    {params.other_options} \
+  {params.other_options} \
     --native-pair-hmm-threads {threads} \
     -L {params.interval} 1>{log.output} 2>{log.error}
     """
@@ -824,7 +824,7 @@ rule gatk_GenomicsDBImport:
     output:
             db = directory(f"{out_dir}4_DB_import/DB_{{chromosomes}}"),
     params:
-            java_mem=cluster_config["gatk_GenomicsDBImport"]['javaMem'],                   # TODO add argument to cluster_config
+            java_mem="20g",                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
             str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}")),
             other_options = config["PARAMS_TOOLS"]["GATK_GENOMICSDBIMPORT"]
@@ -864,7 +864,7 @@ rule gatk_GenotypeGVCFs_merge:
     output:
             vcf_file = f'{out_dir}3_snp_calling/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
     params:
-            java_mem=cluster_config["gatk_GenotypeGVCFs_merge"]['javaMem'],              # TODO add argument to cluster_config
+            java_mem="30g",              # TODO add argument to cluster_config
             other_options = config["PARAMS_TOOLS"]["GATK_GENOTYPEGVCFS"]
     log:
             error =  f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.e',
@@ -969,9 +969,7 @@ rule report:
                     - LOG output: {{log.output}}
             {sep*108}"""
     script:
-        """
-           script/report.Rmd
-        """
+        """script/report.Rmd"""
 
 
 
