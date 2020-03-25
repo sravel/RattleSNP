@@ -75,12 +75,12 @@ picardTools_mark_duplicates:
 
 gatk_HaplotypeCaller:
     threads: 4
-    javaMem: "4g"
-    mem: "-l mem_free=4G"
+    javaMem: "8g"
+    mem: "-l mem_free=12G"
     queue: "-q long.q"
 
 gatk_GenomicsDBImport:
-    javaMem: "30g"
+    javaMem: "20g"
     mem: "-l mem_free=30G"
     queue: "-q long.q"
 
