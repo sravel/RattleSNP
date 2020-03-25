@@ -8,12 +8,14 @@
         'samples_dir': "/work/sravel/mapping/fastq/"       # samples dir
         'reference_file': "/work/sravel/mapping/ref/Mycfi2_wg_ed.fasta"       # references dir
         #'reference_file': "/work/sravel/mapping/ref/scaff-test.fasta"       # references dir
-        'out_dir': "/work/sravel/mapping/pop_genome_86_samples/"       # Out directory
+        'out_dir': "/work/sravel/mapping/pop_genome_86_samples-bwa-mem/"       # Out directory
     mitochondrial_name : "mtDNA"
 ##################
 # Pipeline options
 # boolean run Atropos if True
 cleanning: False
+# boolean, make SNP calling (if True) or juste mapping (if False)
+SNPcalling: False
 # boolean, add stats mapping report if True
 build_stats: True
 #avail: ["mem","sampe","samse"] please select only bwa tools for moment

@@ -26,6 +26,7 @@ samples_dir = config["DATA"]["directories"]["samples_dir"]
 reference_file =  config["DATA"]["directories"]["reference_file"]
 basename_reference = Path(reference_file).stem
 cleanning =  config["cleanning"]
+SNPcalling =  config["SNPcalling"]
 build_stats =  config["build_stats"]
 
 mapping_tools = config["mapping_tools"]
@@ -131,9 +132,12 @@ def output_final(wildcars):
     :param wildcars:
     :return:
     """
-    dico_final = {
-                    "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz'
-                }
+    dico_final = {}
+
+    if SNPcalling:
+        dico_final.update({
+                    "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
+                })
     if cleanning:
         dico_final.update({
                     "fastQC_files_PE" : expand(f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS_fastqc.html", samples = SAMPLES_PAIRED),
