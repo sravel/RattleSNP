@@ -110,7 +110,8 @@ def get_files_path(wildcards):
 SAMPLES, = glob_wildcards(samples_dir+"{samples}_R1.fastq.gz", followlinks=True)
 CHROMOSOMES = get_list_chromosome_names(reference_file)
 CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
-CHROMOSOMES_WITHOUT_MITO.remove(config["DATA"]['mitochondrial_name'])
+if config["DATA"]['mitochondrial_name'] != "":
+    CHROMOSOMES_WITHOUT_MITO.remove(config["DATA"]['mitochondrial_name'])
 
 # Auto check if data is paired with flag _R2
 SAMPLES_PAIRED = []
@@ -773,6 +774,33 @@ rule create_sequence_dict:
     shell: config["MODULES"]["GATK4"]+"""
     gatk CreateSequenceDictionary --java-options "-Xmx{params.java_mem}" -R {input.reference} 1>{log.output} 2>{log.error}
     """
+    
+rule create_sequence_fai:
+    """create sequence fai for gatk_HaplotypeCaller reference"""
+    threads: get_threads('create_sequence_fai', 1)
+    input:
+            reference = reference_file
+    output:
+            fai = reference_file.replace(".fasta",".fai")
+    log:
+            error =  f'{log_dir}create_sequence_fai/{basename_reference}.e',
+            output = f'{log_dir}create_sequence_fai/{basename_reference}.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - Fasta : {{input.reference}}
+                Output:
+                    - fai : {{output.fai}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell: config["MODULES"]["SAMTOOLS"]+"""
+    samtools faidx {input.reference} 1>{log.output} 2>{log.error}
+    """
 
 rule gatk_HaplotypeCaller:
     """apply gatk_HaplotypeCaller on all bam SE end PE"""
@@ -781,6 +809,7 @@ rule gatk_HaplotypeCaller:
             bam_file = rules.picardTools_mark_duplicates.output.bam_file,
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict,
+            fai = rules.create_sequence_fai.output.fai
     output:
             vcf_file = f"{out_dir}3_snp_calling/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
