@@ -1,0 +1,60 @@
+# Master sRNA_pipeline configuration file template
+# ------------------------------------------
+
+####################
+# Input output data options
+'DATA':
+    'directories':
+#        'samples_dir': "/work/carlier.j/elisabeth/hilaire/demultiplex-GBSx-All/pyricularia/"       # samples dir
+        'samples_dir': "/work/carlier.j/elisabeth/hilaire/fastq/"       # samples dir
+        'reference_file': "/work/carlier.j/elisabeth/hilaire/reference/70-15_mito.fasta"       # references dir
+        'out_dir': "/work/carlier.j/elisabeth/hilaire/GBS_pyricularia_oryzae_mem_test_demultiplex/"       # Out directory
+    mitochondrial_name : "Chromosome_mito"
+##################
+# Pipeline options
+# boolean run demultiplexing if true
+demultiplex: True
+demultiplex_file: "/work/carlier.j/elisabeth/hilaire/barecodesGBSx/piri-bipolaris.txt"
+# boolean run Atropos if True
+cleanning: True
+# boolean, make SNP calling (if True) or juste mapping (if False)
+SNPcalling: True
+# boolean, add stats mapping report if True
+build_stats: True
+#avail: ["mem","sampe","samse"] please select only bwa tools for moment
+mapping_tools: "mem"
+##############################
+# Location of various software
+#
+# the variable must load soft on the $PATH environement
+MODULES:
+    "SAMTOOLS": "module load bioinfo/samtools/1.9"         # use for filter reads and convert sam to bam
+    "PYTHON3": "module load system/python/3.7.3"           # Python3 >=3.6 with require libraries
+    "BWA": "module load bioinfo/bwa/0.7.15"                # for make the mapping
+    "ATROPOS": "module load system/python/3.7.3"           # for call atropos
+    "FASTQC": "module load bioinfo/FastQC/0.11.7"          # for controle quality
+    "PICARDTOOLS": "module load bioinfo/picard-tools/2.7.0"          # for controle quality
+    "GATK4": "module load bioinfo/GATK/4.1.4.0"          # for controle quality
+    "BCFTOOLS": "module purge && module load bioinfo/bcftools/1.9"          # for contact vcf
+    "VCFTOOLS": "module purge && module load bioinfo/vcftools/0.1.14_zlib-1.2.8"          # for filter vcf
+    "GBSx": "module purge && module load bioinfo/GBSX/1.3"          # for demultuplux
+
+############################
+# Misc. options for programs
+PARAMS_TOOLS:
+    "GBSx_PE": ""
+    "ATROPOS_SE": "--minimum-length 35  -q 20  -u 8  -O 10"
+    "ATROPOS_PE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
+    "FASTQC": ""
+    "BWA_ALN": ""
+    "BWA_SAMSE": ""
+    "BWA_SAMPE": ""
+    "BWA_MEM": ""
+    "SAMTOOLS_VIEW": "-bh"
+    "SAMTOOLS_SORT": ""
+    "SAMTOOLS_DEPTH": ""
+    "PICARDTOOLS_MARK_DUPLICATES": "CREATE_INDEX=TRUE VALIDATION_STRINGENCY=SILENT"
+    "GATK_HAPLOTYPECALLER": "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
+    "GATK_GENOMICSDBIMPORT": ""
+    "GATK_GENOTYPEGVCFS": "-new-qual"
+    "VCFTOOLS": "--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"
