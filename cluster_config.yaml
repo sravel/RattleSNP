@@ -8,6 +8,10 @@ __default__:
     log: "-o {log.output}.cluster"
     queue: "-q normal.q"
 
+run_GBSx_PE:
+    threads: 1
+    mem: "-l mem_free=16G"
+
 bwa_index:
     threads: 1
     queue: "-q short.q"
@@ -96,3 +100,10 @@ create_sequence_dict:
 bcftools_concat:
     threads: 10
     queue: "-q short.q"
+    
+vcftools_filter:
+    threads: 10
+    queue: "-q short.q"
+    
+    
+    

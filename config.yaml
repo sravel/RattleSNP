@@ -7,7 +7,6 @@
     'directories':
         'samples_dir': "/work/sravel/mapping/fastq/"       # samples dir
         'reference_file': "/work/sravel/mapping/ref/Mycfi2_wg_ed.fasta"       # references dir
-        #'reference_file': "/work/sravel/mapping/ref/scaff-test.fasta"       # references dir
         'out_dir': "/work/sravel/mapping/pop_genome_86_samples-bwa-mem/"       # Out directory
     mitochondrial_name : "mtDNA"
 ##################
@@ -33,6 +32,7 @@ MODULES:
     "PICARDTOOLS": "module load bioinfo/picard-tools/2.7.0"          # for controle quality
     "GATK4": "module load bioinfo/GATK/4.1.4.0"          # for controle quality
     "BCFTOOLS": "module purge && module load bioinfo/bcftools/1.9"          # for contact vcf
+    "VCFTOOLS": "module purge && module load bioinfo/vcftools/0.1.14_zlib-1.2.8"          # for filter vcf
 
 ############################
 # Misc. options for programs
@@ -51,3 +51,4 @@ PARAMS_TOOLS:
     "GATK_HAPLOTYPECALLER": "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
     "GATK_GENOMICSDBIMPORT": ""
     "GATK_GENOTYPEGVCFS": "-new-qual"
+    "VCFTOOLS": "--minDP 10 --minQ 30 --remove-indels --remove-indv FR9031 --remove-indv BF9021 --remove-indv BF9011 --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"

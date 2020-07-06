@@ -5,6 +5,7 @@
 
 import pprint
 from pathlib import Path
+import pandas as pd
 
 from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
 
@@ -25,6 +26,7 @@ pp = pprint.PrettyPrinter(indent=4)
 samples_dir = config["DATA"]["directories"]["samples_dir"]
 reference_file =  config["DATA"]["directories"]["reference_file"]
 basename_reference = Path(reference_file).stem
+demultiplex =  config["demultiplex"]
 cleanning =  config["cleanning"]
 SNPcalling =  config["SNPcalling"]
 build_stats =  config["build_stats"]
@@ -86,7 +88,11 @@ def get_files_path(wildcards):
     :param wildcards:
     :return: dict
     """
-    if Path(f"{samples_dir}{wildcards.samples}_R2.fastq.gz").exists():
+    path_file = f"{samples_dir}{wildcards.samples}_R2.fastq.gz"
+    # if demultiplex:
+    #    path_file = f"{out_dir}0_demultiplex{wildcards.fastq}.R2.fastq.gz"
+
+    if Path(path_file).exists() or wildcards.samples in SAMPLES_PAIRED :
         if mapping_tools in ["sampe", "samse"]:
             return {"bam_in" : rules.bwa_sampe_sort_bam.output.bam_file,
                     "R1": rules.bwa_sampe_sort_bam.input.R1,
@@ -106,21 +112,95 @@ def get_files_path(wildcards):
             return {"bam_in" : rules.bwa_mem_SE_sort_bam.output.bam_file,
                     "R1": rules.bwa_mem_SE_sort_bam.input.R1,
                     }
+def get_fastq_file_PE():
+    """return if file provide from demultiplex, cleanning or direct sample"""
+
+    dico_mapping = {
+                    "fasta": reference_file,
+                     "index": rules.bwa_index.output.index
+                    }
+
+    if cleanning:
+        dico_mapping.update({
+                    "R1" : rules.run_atropos_PE.output.R1,
+                    "R2" : rules.run_atropos_PE.output.R2
+                })
+    elif demultiplex and not cleanning:
+        dico_mapping.update({
+                    "R1" : f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
+                    "R2" : f"{out_dir}0_demultiplex/{{samples}}.R2.fastq.gz",
+                })
+    else:
+        dico_mapping.update({
+                    "R1" :f"{samples_dir}{{samples}}_R1.fastq.gz",
+                    "R2" : f"{samples_dir}{{samples}}_R2.fastq.gz"
+                })
+    # print(dico_mapping)
+    return dico_mapping
+
+def get_fastq_file_SE():
+    """return if file provide from demultiplex, cleanning or direct sample"""
+
+    dico_mapping = {
+                    "fasta": reference_file,
+                     "index": rules.bwa_index.output.index
+                    }
+
+    if cleanning:
+        dico_mapping.update({
+                    "R1" : rules.run_atropos_PE.output.R1,
+                })
+    elif demultiplex and not cleanning:
+        dico_mapping.update({
+                    "R1" : f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
+                })
+    else:
+        dico_mapping.update({
+                    "R1" :f"{samples_dir}{{samples}}_R1.fastq.gz",
+                })
+    # print(dico_mapping)
+    return dico_mapping
+
 #*###############################################################################
-SAMPLES, = glob_wildcards(samples_dir+"{samples}_R1.fastq.gz", followlinks=True)
 CHROMOSOMES = get_list_chromosome_names(reference_file)
 CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
 if config["DATA"]['mitochondrial_name'] != "":
     CHROMOSOMES_WITHOUT_MITO.remove(config["DATA"]['mitochondrial_name'])
 
-# Auto check if data is paired with flag _R2
-SAMPLES_PAIRED = []
-SAMPLES_SINGLE = []
-for sample in SAMPLES:
-    if Path(f"{samples_dir}{sample}_R2.fastq.gz").exists():
-        SAMPLES_PAIRED.append(sample)
-    else:
-        SAMPLES_SINGLE.append(sample)
+
+
+if demultiplex:
+    FASTQ_FILE, = glob_wildcards(samples_dir+"{fastq}_R1.fastq.gz", followlinks=True)
+    # print(f"FASTQ_FILE: {FASTQ_FILE}")
+    if Path(config["demultiplex_file"]).exists():
+        # SAMPLES = [ f"{smp}_R1.fastq.gz" for smp in pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()]
+        SAMPLES =  pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
+
+
+    # Auto check if data is paired with flag _R2
+    SAMPLES_PAIRED = []
+    SAMPLES_SINGLE = []
+    for sample in FASTQ_FILE:
+        if Path(f"{samples_dir}{sample}_R2.fastq.gz").exists():
+            SAMPLES_PAIRED = pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
+        else:
+            SAMPLES_SINGLE = pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
+    # print(f"SAMPLES: {SAMPLES}")
+    # print(f"SAMPLES_SINGLE: {SAMPLES_SINGLE}")
+    # print(f"SAMPLES_PAIRED: {SAMPLES_PAIRED}")
+
+    # exit()
+
+else:
+    SAMPLES, = glob_wildcards(samples_dir+"{samples}_R1.fastq.gz", followlinks=True)
+    # Auto check if data is paired with flag _R2
+    SAMPLES_PAIRED = []
+    SAMPLES_SINGLE = []
+    for sample in SAMPLES:
+        if Path(f"{samples_dir}{sample}_R2.fastq.gz").exists():
+            SAMPLES_PAIRED.append(sample)
+        else:
+            SAMPLES_SINGLE.append(sample)
 
 # print(f"SAMPLES_SINGLE: {SAMPLES_SINGLE}")
 # print(f"SAMPLES_PAIRED: {SAMPLES_PAIRED}")
@@ -133,8 +213,7 @@ def output_final(wildcars):
     :param wildcars:
     :return:
     """
-    dico_final = {}
-
+    dico_final = {"fasta" : f'{out_dir}7_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta'}
     if SNPcalling:
         dico_final.update({
                     "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
@@ -188,13 +267,49 @@ rule bwa_index:
                 bwa index {input.fasta} 1>{log.output} 2>{log.error}
             """
 
+rule run_GBSx_PE:
+    """run GBSx for demultipled file"""
+    threads: get_threads('run_GBSx', 1)
+    input:
+            R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
+            R2 = expand(f"{samples_dir}{{fastq}}_R2.fastq.gz", fastq = FASTQ_FILE),
+            keyfile = config["demultiplex_file"]
+    output:
+            R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_PAIRED),
+            R2 = expand(f"{out_dir}0_demultiplex/{{smp}}.R2.fastq.gz", smp = SAMPLES_PAIRED)
+    params:
+            other_options = config["PARAMS_TOOLS"]["GBSx_PE"],
+            outdir = directory(f"{out_dir}0_demultiplex/"),
+    log :
+            error =  f'{log_dir}run_GBSx_PE/GBS.e',
+            output = f'{log_dir}run_GBSx_PE/GBS.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - Fastq R1 : {{input.R1}}
+                    - Fastq R2 : {{input.R2}}
+                Output:
+                    - Fastq R1 : {{output.R1}}
+                    - Fastq R2 : {{output.R2}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell: config["MODULES"]["GBSx"]+"""
+    java -XX:ParallelGCThreads={threads} -Xmx8G -jar /usr/local/bioinfo/GBSX/1.3/GBSX_v1.3.jar --Demultiplexer -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
+    """
+
+
 # 1=atropos PE
 rule run_atropos_PE:
     """Run atropos for cleanning data"""
     threads: get_threads('run_atropos_PE', 1)
     input:
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz",
-            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz",
+            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
+            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R2.fastq.gz",
     output:
             R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS.fastq.gz",
             R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS.fastq.gz"
@@ -227,7 +342,7 @@ rule run_atropos_SE:
     """Run atropos for cleanning data"""
     threads: get_threads('run_atropos_SE', 1)
     input:
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz",
+            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
     output:
             R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS.fastq.gz"
     params:
@@ -471,10 +586,7 @@ rule bwa_mem_PE_sort_bam:
     """make bwa mem for all samples PE on reference"""
     threads: 2
     input:
-            index = rules.bwa_index.output.index,
-            fasta = reference_file,
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
-            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
+            **get_fastq_file_PE()
     output:
             bam_file =  f"{out_dir}1_mapping/paired/mem/{{samples}}.bam"
     params:
@@ -510,9 +622,7 @@ rule bwa_mem_SE_sort_bam:
     """make bwa mem for all samples SE on reference"""
     threads: 2
     input:
-            index = rules.bwa_index.output.index,
-            fasta = reference_file,
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1
+            **get_fastq_file_SE()
     output:
             bam_file = f"{out_dir}1_mapping/single/mem/{{samples}}.bam"
     params:
@@ -781,7 +891,7 @@ rule create_sequence_fai:
     input:
             reference = reference_file
     output:
-            fai = reference_file.replace(".fasta",".fai")
+            fai = reference_file.replace(".fasta",".fasta.fai")
     log:
             error =  f'{log_dir}create_sequence_fai/{basename_reference}.e',
             output = f'{log_dir}create_sequence_fai/{basename_reference}.o'
@@ -929,6 +1039,7 @@ rule bcftools_concat:
             vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES_WITHOUT_MITO),
     output:
             vcf_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
+            tbi_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz.tbi',
     log:
             error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
             output = f'{log_dir}bcftools_concat/bcftools_concat.o'
@@ -948,6 +1059,7 @@ rule bcftools_concat:
     shell:
         config["MODULES"]["BCFTOOLS"]+"""
             bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z 1>{log.output} 2>{log.error}
+            bcftools index --threads {threads} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
         """
 
 rule vcftools_filter:
@@ -955,7 +1067,9 @@ rule vcftools_filter:
     input:
             vcf_file_all = rules.bcftools_concat.output.vcf_file
     output:
-            vcf_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
+            vcf_file = f'{out_dir}6_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
+    params:
+            other_options = config["PARAMS_TOOLS"]["VCFTOOLS"]
     log:
             error =  f'{log_dir}vcftools_filter/vcftools_filter.e',
             output = f'{log_dir}vcftools_filter/vcftools_filter.o'
@@ -964,18 +1078,49 @@ rule vcftools_filter:
             {sep*108}
             Execute {{rule}} for 
                 Input:
-                    - vcf : {{input.vcf_file}}
+                    - vcf : {{input.vcf_file_all}}
                 Output:
                     - vcf : {{output.vcf_file}}
-                Others
+                Others 
+                    - Other options {{params.other_options}}
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell:
-        config["MODULES"]["BCFTOOLS"]+"""
-            bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z 1>{log.output} 2>{log.error}
+        config["MODULES"]["VCFTOOLS"]+"""
+            vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout | gzip -c 1> {output.vcf_file} 
         """
+
+rule vcf_to_fasta:
+    threads: get_threads('vcf_to_fasta', 1)
+    input:
+            vcf_file_filter = rules.vcftools_filter.output.vcf_file
+    output:
+            fasta = f'{out_dir}7_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+    params:
+            fasta = f'{out_dir}6_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+    log:
+            error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta.e',
+            output = f'{log_dir}vcf_to_fasta/vcf_to_fasta.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - vcf : {{input.vcf_file_filter}}
+                Output:
+                    - fasta : {{output.fasta}}
+                Others 
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell:
+        config["MODULES"]["PYTHON3"]+"""
+    python3 script/vcf2phylip.py -i {input.vcf_file_filter} -p -f
+    mv {params.fasta} {output.fasta}
+    """
 
 rule report:
     threads: get_threads('report', 1)
