@@ -299,9 +299,38 @@ rule run_GBSx_PE:
                     - LOG output: {{log.output}}
             {sep*108}"""
     shell: config["MODULES"]["GBSx"]+"""
-    java -XX:ParallelGCThreads={threads} -Xmx8G -jar /usr/local/bioinfo/GBSX/1.3/GBSX_v1.3.jar --Demultiplexer -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
+    java -XX:ParallelGCThreads={threads} -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
     """
-
+rule run_GBSx_SE:
+    """run GBSx for demultipled file"""
+    threads: get_threads('run_GBSx', 1)
+    input:
+            R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
+            keyfile = config["demultiplex_file"]
+    output:
+            R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_SINGLE),
+    params:
+            other_options = config["PARAMS_TOOLS"]["GBSx_SE"],
+            outdir = directory(f"{out_dir}0_demultiplex/"),
+    log :
+            error =  f'{log_dir}run_GBSx_SE/GBS.e',
+            output = f'{log_dir}run_GBSx_SE/GBS.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for 
+                Input:
+                    - Fastq R1 : {{input.R1}}
+                Output:
+                    - Fastq R1 : {{output.R1}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell: config["MODULES"]["GBSx"]+"""
+    java -XX:ParallelGCThreads={threads} -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
+    """
 
 # 1=atropos PE
 rule run_atropos_PE:

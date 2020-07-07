@@ -8,8 +8,12 @@ __default__:
     log: "-o {log.output}.cluster"
     queue: "-q normal.q"
 
+run_GBSx_SE:
+    threads: 8
+    mem: "-l mem_free=16G"
+
 run_GBSx_PE:
-    threads: 1
+    threads: 8
     mem: "-l mem_free=16G"
 
 bwa_index:

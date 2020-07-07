@@ -5,7 +5,6 @@
 # Input output data options
 'DATA':
     'directories':
-#        'samples_dir': "/work/carlier.j/elisabeth/hilaire/demultiplex-GBSx-All/pyricularia/"       # samples dir
         'samples_dir': "/work/carlier.j/elisabeth/hilaire/fastq/"       # samples dir
         'reference_file': "/work/carlier.j/elisabeth/hilaire/reference/70-15_mito.fasta"       # references dir
         'out_dir': "/work/carlier.j/elisabeth/hilaire/GBS_pyricularia_oryzae_mem_test_demultiplex/"       # Out directory
@@ -16,11 +15,11 @@
 demultiplex: True
 demultiplex_file: "/work/carlier.j/elisabeth/hilaire/barecodesGBSx/piri-bipolaris.txt"
 # boolean run Atropos if True
-cleanning: True
+cleanning: False
 # boolean, make SNP calling (if True) or juste mapping (if False)
-SNPcalling: True
+SNPcalling: False
 # boolean, add stats mapping report if True
-build_stats: True
+build_stats: False
 #avail: ["mem","sampe","samse"] please select only bwa tools for moment
 mapping_tools: "mem"
 ##############################
@@ -43,6 +42,7 @@ MODULES:
 # Misc. options for programs
 PARAMS_TOOLS:
     "GBSx_PE": ""
+    "GBSx_SE": ""
     "ATROPOS_SE": "--minimum-length 35  -q 20  -u 8  -O 10"
     "ATROPOS_PE": "--minimum-length 35  -q 20,20  -U 8  -O 10"
     "FASTQC": ""
