@@ -166,7 +166,7 @@ CHROMOSOMES = get_list_chromosome_names(reference_file)
 CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
 if config["DATA"]['mitochondrial_name'] != "":
     CHROMOSOMES_WITHOUT_MITO.remove(config["DATA"]['mitochondrial_name'])
-
+FASTQ_FILE = None
 
 
 if demultiplex:
@@ -213,7 +213,8 @@ def output_final(wildcars):
     :param wildcars:
     :return:
     """
-    dico_final = {"fasta" : f'{out_dir}7_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta'}
+    dico_final = {"fasta" : f'{out_dir}8_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+                  "report_vcf": f"{out_dir}report_vcf.html"}
     if SNPcalling:
         dico_final.update({
                     "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
@@ -252,7 +253,7 @@ rule bwa_index:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                 Output:
@@ -266,71 +267,73 @@ rule bwa_index:
             config["MODULES"]["BWA"]+"""
                 bwa index {input.fasta} 1>{log.output} 2>{log.error}
             """
+if len(SAMPLES_PAIRED) > 0 and FASTQ_FILE:
+    rule run_GBSx_PE:
+        """run GBSx for demultipled file"""
+        threads: get_threads('run_GBSx_PE', 1)
+        input:
+                R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
+                R2 = expand(f"{samples_dir}{{fastq}}_R2.fastq.gz", fastq = FASTQ_FILE),
+                keyfile = config["demultiplex_file"]
+        output:
+                R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_PAIRED),
+                R2 = expand(f"{out_dir}0_demultiplex/{{smp}}.R2.fastq.gz", smp = SAMPLES_PAIRED)
+        params:
+                other_options = config["PARAMS_TOOLS"]["GBSx_PE"],
+                outdir = directory(f"{out_dir}0_demultiplex/"),
+        log :
+                error =  f'{log_dir}run_GBSx_PE/GBS.e',
+                output = f'{log_dir}run_GBSx_PE/GBS.o'
+        message:
+                f"""
+                {sep*108}
+                Execute {{rule}} for
+                    Input:
+                        - Fastq R1 : {{input.R1}}
+                        - Fastq R2 : {{input.R2}}
+                    Output:
+                        - Fastq R1 : {{output.R1}}
+                        - Fastq R2 : {{output.R2}}
+                    Others
+                        - Threads : {{threads}}
+                        - LOG error: {{log.error}}
+                        - LOG output: {{log.output}}
+                {sep*108}"""
+        shell: config["MODULES"]["GBSx"]+"""
+        java -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
+        """
 
-rule run_GBSx_PE:
-    """run GBSx for demultipled file"""
-    threads: get_threads('run_GBSx', 1)
-    input:
-            R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
-            R2 = expand(f"{samples_dir}{{fastq}}_R2.fastq.gz", fastq = FASTQ_FILE),
-            keyfile = config["demultiplex_file"]
-    output:
-            R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_PAIRED),
-            R2 = expand(f"{out_dir}0_demultiplex/{{smp}}.R2.fastq.gz", smp = SAMPLES_PAIRED)
-    params:
-            other_options = config["PARAMS_TOOLS"]["GBSx_PE"],
-            outdir = directory(f"{out_dir}0_demultiplex/"),
-    log :
-            error =  f'{log_dir}run_GBSx_PE/GBS.e',
-            output = f'{log_dir}run_GBSx_PE/GBS.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for 
-                Input:
-                    - Fastq R1 : {{input.R1}}
-                    - Fastq R2 : {{input.R2}}
-                Output:
-                    - Fastq R1 : {{output.R1}}
-                    - Fastq R2 : {{output.R2}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["GBSx"]+"""
-    java -XX:ParallelGCThreads={threads} -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
-    """
-rule run_GBSx_SE:
-    """run GBSx for demultipled file"""
-    threads: get_threads('run_GBSx', 1)
-    input:
-            R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
-            keyfile = config["demultiplex_file"]
-    output:
-            R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_SINGLE),
-    params:
-            other_options = config["PARAMS_TOOLS"]["GBSx_SE"],
-            outdir = directory(f"{out_dir}0_demultiplex/"),
-    log :
-            error =  f'{log_dir}run_GBSx_SE/GBS.e',
-            output = f'{log_dir}run_GBSx_SE/GBS.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for 
-                Input:
-                    - Fastq R1 : {{input.R1}}
-                Output:
-                    - Fastq R1 : {{output.R1}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["GBSx"]+"""
-    java -XX:ParallelGCThreads={threads} -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
-    """
+if len(SAMPLES_SINGLE) > 0 and FASTQ_FILE:
+    rule run_GBSx_SE:
+        """run GBSx for demultipled file"""
+        threads: get_threads('run_GBSx_SE', 1)
+        input:
+                R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
+                keyfile = config["demultiplex_file"]
+        output:
+                R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_SINGLE),
+        params:
+                other_options = config["PARAMS_TOOLS"]["GBSx_SE"],
+                outdir = directory(f"{out_dir}0_demultiplex/"),
+        log :
+                error =  f'{log_dir}run_GBSx_SE/GBS.e',
+                output = f'{log_dir}run_GBSx_SE/GBS.o'
+        message:
+                f"""
+                {sep*108}
+                Execute {{rule}} for
+                    Input:
+                        - Fastq R1 : {{input.R1}}
+                    Output:
+                        - Fastq R1 : {{output.R1}}
+                    Others
+                        - Threads : {{threads}}
+                        - LOG error: {{log.error}}
+                        - LOG output: {{log.output}}
+                {sep*108}"""
+        shell: config["MODULES"]["GBSx"]+"""
+        java -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
+        """
 
 # 1=atropos PE
 rule run_atropos_PE:
@@ -350,7 +353,7 @@ rule run_atropos_PE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fastq R1 : {{input.R1}}
                     - Fastq R2 : {{input.R2}}
@@ -382,7 +385,7 @@ rule run_atropos_SE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fastq R1 : {{input.R1}}
                 Output:
@@ -415,7 +418,7 @@ rule run_fastqc_PE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fastq R1 : {{input.R1}}
                     - Fastq R2 : {{input.R2}}
@@ -447,7 +450,7 @@ rule run_fastqc_SE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fastq R1 : {{input.R1}}
                 Output:
@@ -481,7 +484,7 @@ rule run_bwa_aln_PE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -516,7 +519,7 @@ rule run_bwa_aln_SE:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -552,10 +555,10 @@ rule bwa_samse_sort_bam:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
-                    - R1: {{input.R1}} 
+                    - R1: {{input.R1}}
                 Output:
                     - Bam: {{output.bam_file}}
                 Others
@@ -593,7 +596,7 @@ rule bwa_sampe_sort_bam:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -629,7 +632,7 @@ rule bwa_mem_PE_sort_bam:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -665,7 +668,7 @@ rule bwa_mem_SE_sort_bam:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -697,7 +700,7 @@ rule merge_bam_directories:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam_in}}
                 Output:
@@ -727,7 +730,7 @@ rule samtools_idxstats:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam}}
                 Output:
@@ -754,7 +757,7 @@ rule merge_idxstats:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - CSV_files : {{input.csv_resume}}
                 Output:
@@ -783,7 +786,7 @@ rule samtools_depth:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam}}
                 Output:
@@ -811,7 +814,7 @@ rule bam_stats_to_csv:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam_file}}
                 Output:
@@ -837,7 +840,7 @@ rule merge_bam_stats:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - CSV list : {{input.csv_resume}}
                 Output:
@@ -869,7 +872,7 @@ rule picardTools_mark_duplicates:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam_file}}
                 Output:
@@ -900,7 +903,7 @@ rule create_sequence_dict:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.reference}}
                 Output:
@@ -913,7 +916,7 @@ rule create_sequence_dict:
     shell: config["MODULES"]["GATK4"]+"""
     gatk CreateSequenceDictionary --java-options "-Xmx{params.java_mem}" -R {input.reference} 1>{log.output} 2>{log.error}
     """
-    
+
 rule create_sequence_fai:
     """create sequence fai for gatk_HaplotypeCaller reference"""
     threads: get_threads('create_sequence_fai', 1)
@@ -927,7 +930,7 @@ rule create_sequence_fai:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Fasta : {{input.reference}}
                 Output:
@@ -961,7 +964,7 @@ rule gatk_HaplotypeCaller:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{input.bam_file}}
                     - Fasta : {{input.reference}}
@@ -1006,7 +1009,7 @@ rule gatk_GenomicsDBImport:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - Bam : {{params.str_join}}
                     - Fasta : {{input.reference}}
@@ -1044,7 +1047,7 @@ rule gatk_GenotypeGVCFs_merge:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - db : {{input.db}}
                     - Fasta : {{input.reference}}
@@ -1075,7 +1078,7 @@ rule bcftools_concat:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - vcf : {{input.vcf_file}}
                 Output:
@@ -1096,7 +1099,7 @@ rule vcftools_filter:
     input:
             vcf_file_all = rules.bcftools_concat.output.vcf_file
     output:
-            vcf_file = f'{out_dir}6_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
+            vcf_file = f'{out_dir}7_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
     params:
             other_options = config["PARAMS_TOOLS"]["VCFTOOLS"]
     log:
@@ -1105,12 +1108,12 @@ rule vcftools_filter:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - vcf : {{input.vcf_file_all}}
                 Output:
                     - vcf : {{output.vcf_file}}
-                Others 
+                Others
                     - Other options {{params.other_options}}
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
@@ -1118,7 +1121,7 @@ rule vcftools_filter:
             {sep*108}"""
     shell:
         config["MODULES"]["VCFTOOLS"]+"""
-            vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout | gzip -c 1> {output.vcf_file} 
+            vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout  | sed -r "s#\.\/\.#.#g" | bgzip -c 1> {output.vcf_file}
         """
 
 rule vcf_to_fasta:
@@ -1126,21 +1129,21 @@ rule vcf_to_fasta:
     input:
             vcf_file_filter = rules.vcftools_filter.output.vcf_file
     output:
-            fasta = f'{out_dir}7_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+            fasta = f'{out_dir}8_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
     params:
-            fasta = f'{out_dir}6_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+            fasta = f'{out_dir}7_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
     log:
             error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta.e',
             output = f'{log_dir}vcf_to_fasta/vcf_to_fasta.o'
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - vcf : {{input.vcf_file_filter}}
                 Output:
                     - fasta : {{output.fasta}}
-                Others 
+                Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
@@ -1150,6 +1153,86 @@ rule vcf_to_fasta:
     python3 script/vcf2phylip.py -i {input.vcf_file_filter} -p -f
     mv {params.fasta} {output.fasta}
     """
+######################################"
+# VCF STATS
+######################################"
+rule vcf_stats:
+    threads: get_threads('vcf_stats', 1)
+    input:
+            vcf_file_all = rules.bcftools_concat.output.vcf_file
+    output:
+            freq = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.frq',
+            depth = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.idepth',
+            depth_mean = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.ldepth.mean',
+            qual = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.lqual',
+            missing_ind = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.imiss',
+            miss = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.lmiss',
+    log:
+            error =  f'{log_dir}vcf_stats/vcftools.e',
+            output = f'{log_dir}vcf_stats/vcftools.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for
+                Input:
+                    - vcf : {{input.vcf_file_all}}
+                Output:
+                    - freq : {{output.freq}}
+                    - depth : {{output.depth}}
+                    - depth_mean : {{output.depth_mean}}
+                    - qual : {{output.qual}}
+                    - missing_ind : {{output.missing_ind}}
+                    - miss : {{output.miss}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    shell:
+        config["MODULES"]["VCFTOOLS"]+config["MODULES"]["SAMTOOLS"]+"""
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --freq2 --max-alleles 3 --stdout 1> {output.freq}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --depth --stdout 1> {output.depth}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-mean-depth --stdout 1> {output.depth_mean}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-quality --stdout 1> {output.qual}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-indv --stdout 1> {output.missing_ind}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}
+            cat {output.missing_ind} | awk \'\{if($5>0.75)print $1\}\'|grep -v INDV> remove-indv_75perc
+        """
+
+rule report_vcf:
+    threads: get_threads('report_vcf', 1)
+    input:
+            freq = rules.vcf_stats.output.freq,
+            depth = rules.vcf_stats.output.depth,
+            depth_mean = rules.vcf_stats.output.depth_mean,
+            qual = rules.vcf_stats.output.qual,
+            missing_ind = rules.vcf_stats.output.missing_ind,
+            miss = rules.vcf_stats.output.miss
+    output:
+            report = f"{out_dir}report_vcf.html",
+    log:
+            error =  f'{log_dir}report_vcf/report.e',
+            output = f'{log_dir}report_vcf/report.o'
+    message:
+            f"""
+            {sep*108}
+            Execute {{rule}} for
+                Input:
+                    - freq : {{input.freq}}
+                    - depth : {{input.depth}}
+                    - depth_mean : {{input.depth_mean}}
+                    - qual : {{input.qual}}
+                    - missing_ind : {{input.missing_ind}}
+                    - miss : {{input.miss}}
+                Output:
+                    - report : {{output.report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            {sep*108}"""
+    script:
+        """script/report_vcf.Rmd"""
 
 rule report:
     threads: get_threads('report', 1)
@@ -1164,7 +1247,7 @@ rule report:
     message:
             f"""
             {sep*108}
-            Execute {{rule}} for 
+            Execute {{rule}} for
                 Input:
                     - csv : {{input.depth_resume}}
                     - csv : {{input.idxstats_resume}}
