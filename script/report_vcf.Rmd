@@ -1,0 +1,231 @@
+---
+title: "VCF quality report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    fig_caption: TRUE
+    lightbox: TRUE
+    gallery: TRUE
+    mathjax: "rmdformats"
+    highlight: pygments
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+
+---
+<style>
+#sidebar h2 {
+	background-color: #2980B9;
+}
+h1,h2,h3,h4,h5,h6,legend{
+color: #2980B9;
+}
+</style>
+```{r load package, include=FALSE, echo= FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
+
+suppressMessages(library('knitr', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmdformats', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('DT', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('htmltools', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('htmlwidgets', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('gridExtra', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('tidyverse', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('magrittr', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('stringr', warn.conflict = FALSE, quietly = TRUE))
+
+setwd("~/work/elisabeth/hilaire/GBS-2020-bipolaris/workflow-bipolaris/5_snp_calling_final")
+
+basename <- tools::file_path_sans_ext(snakemake@input$freq)
+```
+
+This is th summary report for vcf: `r paste0(basename, ".vcf.gz")`
+
+# Variant based statistics
+
+The first thing we will do is look at the statistics we generated for each of the variants in our subset VCF - quality, depth, missingness and allele frequency.
+
+## Variant quality
+
+The first metric we will look at is the (Phred encoded) site quality. This is a measure of how much confidence we have in our variant calls. You will see that for each site in our subsampled VCF, we have extracted the site quality score. Now we will plot the distribution of this quality
+
+```{r Variant quality, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+var_qual <- read_delim(paste0(basename, ".lqual"), delim = "\t",
+           col_names = c("chr", "pos", "qual"), skip = 1)
+
+a <- ggplot(var_qual, aes(qual)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3) + theme_light()
+ggplotly(a)
+```
+
+```{r Variant quality summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
+DT::datatable(t(as.data.frame(sapply(var_qual[, c("qual")], summary))),
+              class = 'table-condensed ',
+              option = list(autoWidth = TRUE, dom = 'rt')
+              )
+```
+
+From this we can see that quality scores are actually very high for our sites. Remember that a Phred score of 30 represents a 1 in 1000 chance that our SNP call is erroneous. Clearly most sites exceed this - suggesting we have a lot of high confidence calls. This is most probably because we have sufficient read depth (as you will see in the next section). However since most sites have a high quality we can see that filtering on this is not really going to be that useful.
+
+We recommend setting a minimum threshold of 30 and filtering more strongly on other aspects of the data.
+
+## Variant mean depth
+
+Next we will examine the mean depth for each of our variants. This is essentially the number of reads that have mapped to this position. 
+The output we generated with vcftools is the mean of the read depth across all individuals - it is for both alleles at a position and is not partitioned between the reference and the alternative. First we read in the data.
+
+```{r Variant mean depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
+var_depth <- read_delim(paste0(basename, ".ldepth.mean"), delim = "\t",
+           col_names = c("chr", "pos", "mean_depth", "var_depth"), skip = 1)
+
+a <- ggplot(var_depth, aes(mean_depth)) + geom_area(fill = "dodgerblue1", colour = "black", alpha = 0.3, stat="bin", binwidth=0.1)+ theme_light()
+ggplotly(a)
+```
+
+This plot is a bit misleading because clearly, there are very few variants with extremely high coverage indeed. Let’s take a closer at the mean depth:
+
+```{r Variant summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
+DT::datatable(t(as.data.frame(sapply(var_depth[, c("mean_depth")], summary))),
+              class = 'table-condensed ',
+              option = list(autoWidth = TRUE, dom = 'rt')
+              )
+```
+
+Since we all took different subsets, these values will likely differ slightly but clearly in this case most variants have a depth of **`r round(median(var_depth$mean_depth),0)`-`r round(mean(var_depth$mean_depth),0)`x ** whereas there are some extreme outliers. Use zoom to redraw our plot to exclude these and get a better idea of the distribution of mean depth.
+
+This gives a better idea of the distribution. We could set our minimum coverage at the 5 and 95% quantiles but we should keep in mind that the more reads that cover a site, the higher confidence our basecall is. 5x is a good rule of thumb as a minimum cutoff for read depth, although if we wanted to be conservative, we could go with 10x.
+
+What is more important here is that we set a good maximum depth cufoff. As the outliers show, some regions clearly have extremely high coverage and this likely reflects mapping/assembly errors and also paralogous or repetitive regions. We want to exclude these as they will bias our analyses. Usually a good rule of thumb is something the mean depth x 2 - so in this case we could set our maximum depth at 40x.
+
+## Variant missingness
+
+Next up we will look at the proportion of missingness at each variant. This is a measure of how many individuals lack a genotype at a call site.
+One thing to keep in mind here is that different datasets will likely have different missingness profiles. RAD-sequencing data for example is likely to have a slightly higher mean missingnes than whole genome resequencing data because it is a random sample of RAD sites from each individual genome - meaning it is very unlikely all individuals will share exactly the same loci (although you would hope the majority share a subset).
+
+```{r Variant missing max, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+var_miss <- read_delim(paste0(basename, ".lmiss"), delim = "\t",
+                       col_names = c("chr", "pos", "nchr", "nfiltered", "nmiss", "fmiss"), skip = 1)
+
+a <- ggplot(var_miss, aes(fmiss)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3)+ theme_light()
+ggplotly(a)
+```
+
+```{r Variant missing max summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
+DT::datatable(t(as.data.frame(sapply(var_miss[, c("fmiss")], summary))),
+              class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
+```
+
+Using the previous information, you must select the missing data threshold. For example if we will remove all sites where over 10% of individuals are missing a genotype. One thing to note here is that vcftools inverts the direction of missigness, so our 10% threshold means we will tolerate 90% missingness (yes this is confusing and counterintuitive… but that’s the way it is!). Typically missingness of 75-95% is used.
+
+
+## Minor allele frequency
+
+Last of all for our per variant analyses, we will take a look at the distribution of allele frequencies. This will help inform our minor-allele frequency (MAF) thresholds. As previously, we read in the data:
+
+```{r Minor allele frequency, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+var_freq <- read_delim(paste0(basename, ".frq"), delim = "\t",
+                       col_names = c("chr", "pos", "nalleles", "nchr", "a1", "a2", "a3"), skip = 1)
+
+# find minor allele frequency
+var_freq$maf <- var_freq %>% select(a1, a2) %>% apply(1, function(z) min(z))
+
+a <- ggplot(var_freq, aes(maf)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3)+ theme_light()
+ggplotly(a)
+
+```
+The distribution might look a little odd - this is partly because of the low number of individuals we have in the dataset (16), meaning there are only certain frequencies possible. Nonetheless, it is clear that a large number of variants have low frequency alleles. We can also look at the distribution in more detail:
+
+```{r Minor allele frequency summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
+DT::datatable(t(as.data.frame(sapply(var_freq[, c("maf")], summary))),
+              class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
+```
+
+The upper bound of the distribution is 0.5, which makes sense because if MAF was more than this, it wouldn’t be the MAF! How do we interpret MAF? It is an important measure because low MAF alleles may only occur in one or two individuals. It is possible that some of these low frequency alleles are in fact unreliable base calls - i.e. a source of error.
+
+With 28 individuals, there are 28 alleles for a given site. Therefore MAF = 0.04 is equivalent to a variant occurring as one allele in a single individual (i.e. 28 * 0.04 = 1.12). Alternatively, an MAF of 0.1 would mean that any allele would need to occur at least twice (i.e. 28 * 0.1 = 2.8).
+
+Setting MAF cutoffs is actually not that easy or straightforward. Hard MAF filtering (i.e. setting a high threshold) can severely bias estimation of the site frequency spectrum and cause problems with demographic analyses. Similarly, an excesss of low frequency, ‘singleton’ SNPs (i.e. only occurring in one individual) can mean you keep many uniformative loci in your dataset that make it hard to model things like population structure.
+
+Usually then, it is best practice to produce one dataset with a good MAF threshold and keep another without any MAF filtering at all. For now however, we will set our MAF to 0.1
+
+***
+
+# Individual based statistics
+
+As well as a our per variant statistics we generated earlier, we also calculated some individual metrics too. WE can look at the distribution of these to get an idea whether some of our individuals have not sequenced or mapped as well as others. This is good practice to do with a new dataset. A lot of these statistics can be compared to other measures generated from the data (i.e. principal components as a measure of population structure) to see if they drive any apparent patterns in the data.
+
+
+## Mean depth per individual
+
+First we will look at the distribution of mean depth among individuals.
+
+```{r Mean depth per individual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+ind_depth <- read_delim(paste0(basename, ".idepth"), delim = "\t",
+                        col_names = c("ind", "nsites", "depth"), skip = 1)
+
+a <- ggplot(ind_depth, aes(depth)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.1)+ theme_light()
+ggplotly(a)
+
+DT::datatable(t(as.data.frame(sapply(ind_depth[, c("depth")], summary))),
+              class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
+
+DT::datatable(ind_depth, caption =" Table n°1: Depth per individual",
+              rownames = NULL,
+              escape = FALSE,
+              class = 'table table-striped table-bordered table-hover',
+              extensions = 'Buttons',
+              filter = list(position = 'top', clear = FALSE, plain = TRUE),
+              option= list(
+                         paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+                         dom = 'BRSPQlfrtip',
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                         )
+            )
+
+```
+
+We are plotting data for `r nrow(ind_depth)` individuals, the plot looks a little disjointed. While there is some evidence that some individuals were sequenced to a higher depth than others, so check the outliersand remove individus with individual sequencing depth lowers.
+
+## Proportion of missing data per individual
+
+Next we will look at the proportion of missing data per individual. We read in the data below:
+This is very similar to the missing data per site. Here we will focus on the fmiss column - i.e. the proportion of missing data.
+
+```{r Proportion of missing data per individual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+ind_miss  <- read_delim(paste0(basename, ".imiss"), delim = "\t",
+                        col_names = c("ind", "ndata", "nfiltered", "nmiss", "fmiss"), skip = 1)
+
+a <- ggplot(ind_miss, aes(fmiss)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.01)+ theme_light()
+ggplotly(a)
+
+DT::datatable(t(as.data.frame(sapply(ind_miss[, c("fmiss")], summary))),
+              class = 'table-condensed ',
+              option = list(autoWidth = TRUE, dom = 'rt')
+              )
+
+DT::datatable(ind_miss, caption =" Table n°2: Proportion of missing data per individual",
+              rownames = NULL,
+              escape = FALSE,
+              class = 'table table-striped table-bordered table-hover',
+              extensions = 'Buttons',
+              filter = list(position = 'top', clear = FALSE, plain = TRUE),
+              option= list(
+                         paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+                         dom = 'BRSPQlfrtip',
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                         )
+              ) %>%
+  formatStyle(TRUE,valueColumns ='fmiss',color = 'black',font ='bold',background = styleInterval(c(0.75,1), c('white','red','white')))
+```
+
+Again this shows us, the proportion of missing data per individual is very high indeed. It ranges from **`r min(ind_miss$fmiss)`-`r max(ind_miss$fmiss)`**, so remove individuals with more than 0.75% of missing data
+
+
+
+
