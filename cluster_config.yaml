@@ -1,5 +1,5 @@
 __default__:
-    threads: 1
+    threads: 2
     n_cpu: "-pe parallel_smp {threads}"
     mem: "-l mem_free=4G"
     export_env: "-V"
@@ -8,41 +8,20 @@ __default__:
     log: "-o {log.output}.cluster"
     queue: "-q normal.q"
 
-run_GBSx_SE:
-    threads: 8
-    mem: "-l mem_free=16G"
-
-run_GBSx_PE:
-    threads: 8
-    mem: "-l mem_free=16G"
 
 bwa_index:
     threads: 1
     queue: "-q short.q"
 
-run_atropos_PE:
+run_atropos:
     threads: 6
 
-run_atropos_SE:
-    threads: 6
-
-run_fastqc_PE:
+run_fastqc:
     threads: 2
     mem: "-l mem_free=4G"
 
-run_fastqc_SE:
-    threads: 2
-    mem: "-l mem_free=4G"
 
 run_bwa_aln_PE:
-    threads: 6
-    mem: "-l mem_free=4G"
-
-run_bwa_aln_SE:
-    threads: 6
-    mem: "-l mem_free=4G"
-
-bwa_samse_sort_bam:
     threads: 6
     mem: "-l mem_free=4G"
 
@@ -50,15 +29,11 @@ bwa_sampe_sort_bam:
     threads: 6
     mem: "-l mem_free=4G"
 
-bwa_mem_PE_sort_bam:
+bwa_mem_sort_bam:
     threads: 6
     mem: "-l mem_free=4G"
 
-bwa_mem_SE_sort_bam:
-    threads: 6
-    mem: "-l mem_free=4G"
-
-merge_bam_directories:
+samtools_index:
     queue: "-q short.q"
 
 samtools_idxstats:

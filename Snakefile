@@ -1,72 +1,122 @@
-## Snakemake - Mapping_pipeline
-##
-## @RAVEL-Sebastien
-##
+#!/usr/bin/env snakemake
+# -*- coding: utf-8 -*-
 
-import pprint
+
 from pathlib import Path
+import pprint
+from snakemake.logging import logger
+from snakemake.dag import DAG
+from snakemake.io import load_configfile, glob_wildcards
+import os
 import pandas as pd
 
+# load own functions
 from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from script.module import RattlerSNP, get_last_version, get_version, get_list_chromosome_names
 
+# GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
 
+# recovery basedir where RattlerSNP was installed
+basedir = workflow.basedir
+RATTLERSNP_PATH = Path(basedir)
+
+logo = RATTLERSNP_PATH.joinpath('SupplementaryFiles/RattlerSNP_logo.png').as_posix()
+
+version_RattlerSNP = get_version(basedir)
+
+logger.info("""
+    Welcome to RattlerSNP  !
+    Created on November 2019
+    version: """+version_RattlerSNP+"""
+    @author: Sebastien Ravel (CIRAD)
+    @email: sebastien.ravel@cirad.fr
+
+    #                       _.--....
+    #              _....---;:'::' ^__/
+    #            .' `'`___....---=-'`
+    #           /::' (`
+    #           \\'   `:.                   `OooOOo.                    o              .oOOOo.  o.     O OooOOo.  
+    #            `\::.  ';-"":::-._  {}      o     `o                  O               o     o  Oo     o O     `O 
+    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o               O.       O O    O o      O 
+    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O                `OOoo.  O  o   o O     .o 
+    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo. `OoOo.       `O O   o  O oOooOO' 
+    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'  o            o o    O O o   
+    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O     O.    .O o     Oo O  
+    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'  o      `oooO'  O     `o o' 
+    #     '--.:::...---'\:'.:`':`':./       
+    #                    '-::..:::-'
+
+    Please cite our github https://github.com/sravel/RattlerSNP
+    Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
+    and GPLv3 Intellectual property belongs to CIRAD and authors.
+    """+get_last_version(version_RattlerSNP))
+
+if not workflow.overwrite_configfiles:
+    raise ValueError("ERROR RattlerSNP: You need to use --configfile option to snakemake command line")
+else:
+    path_config = workflow.overwrite_configfiles[0]
+
+cluster_config: RATTLERSNP_PATH.joinpath("cluster_config.yaml")
+tools_config  = load_configfile(RATTLERSNP_PATH.joinpath("tools_path.yaml"))
+
+
+
+# --- Verification Configuration Files --- #
+# using schemas to check mandatory value from yaml format
+# print(config)
+rattlersnp = RattlerSNP(config, path_config, tools_config, RATTLERSNP_PATH)
+# print(rattlersnp.export_use_yaml)
+
+# print for debug:
+logger.debug(print(rattlersnp))
+
+
 ###############################################################################
-# NOTE pas de caractere speciaux entre 2 wildcards
-
-# --- Importing Configuration Files --- #
-#configfile: 'config.yaml'
-#cluster_config: "cluster_config.yaml"
-
-# pp.pprint(cluster_config["gatk_HaplotypeCaller"]["javaMem"])
-# pp.pprint(cluster_config)
-# exit()
-
 # dir and suffix
-samples_dir = config["DATA"]["directories"]["samples_dir"]
-reference_file =  config["DATA"]["directories"]["reference_file"]
+fastq_dir = config["DATA"]["FASTQ"]
+bam_dir = config["DATA"]["BAM"]
+vcf_dir = config["DATA"]["VCF"]
+reference_file =  config["DATA"]["REFERENCE_FILE"]
 basename_reference = Path(reference_file).stem
-demultiplex =  config["demultiplex"]
-cleanning =  config["cleanning"]
-SNPcalling =  config["SNPcalling"]
-build_stats =  config["build_stats"]
-
-mapping_tools = config["mapping_tools"]
-
-# print(basename_reference)
-out_dir = config["DATA"]["directories"]["out_dir"]
+out_dir = config["DATA"]["OUTPUT"]
 log_dir = f"{out_dir}LOGS/"
+
+CHROMOSOMES = get_list_chromosome_names(reference_file)
+CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
+chrom_mito = config["PARAMS"]['MITOCHONDRIAL_NAME']
+if chrom_mito:
+    CHROMOSOMES_WITHOUT_MITO.remove(chrom_mito)
+
+cleaning = config["CLEANING"]["ATROPOS"]
+fastqc = config["FASTQC"]
+SNPcalling =  config["SNPCALLING"]
+build_stats =  config["MAPPING"]["BUILD_STATS"]
+
 # to lunch separator
-sep="#"
 BWA_INDEX = ['amb','ann','bwt','pac','sa']
 
+#*###############################################################################
 #############################################
 # use threads define in cluster_config rule or rule default or default in snakefile
 #############################################
 def get_threads(rule, default):
     """
-    use threads define in cluster_config rule or rule default or default in snakefile
-    :param rule:
-    :param default:
-    :return: int(threads)
+    give threads or 'cpus-per-task from cluster_config rule : threads to SGE and cpus-per-task to SLURM
     """
     if rule in cluster_config and 'threads' in cluster_config[rule]:
         return int(cluster_config[rule]['threads'])
+    elif rule in cluster_config and 'cpus-per-task' in cluster_config[rule]:
+        return int(cluster_config[rule]['cpus-per-task'])
+    elif '__default__' in cluster_config and 'cpus-per-task' in cluster_config['__default__']:
+        return int(cluster_config['__default__']['cpus-per-task'])
     elif '__default__' in cluster_config and 'threads' in cluster_config['__default__']:
         return int(cluster_config['__default__']['threads'])
     return default
 
-#*###############################################################################
-def get_list_chromosome_names(fasta_file):
-    """
-            Return the list of sequence name on the fasta file.
-            Work with Biopython and python version >= 3.5
-    """
-    from Bio import SeqIO
-    return [*SeqIO.to_dict(SeqIO.parse(fasta_file,"fasta"))]
 
 #*###############################################################################
-def build_log_path(debug = False):
+def build_log_path(debug=False):
     """
         Create '{working_dir}LOGS/{rules_name}' to prepare log path for all rules.
         The function is need when you run on cluster mode but is mandatory to append the call at the end of Snakefile like
@@ -80,132 +130,25 @@ def build_log_path(debug = False):
     else:
         [Path(f"{log_dir}{rule.name}/").mkdir(parents=True, exist_ok=True) for rule in list(workflow.rules)]
 
-#*###############################################################################
-def get_files_path(wildcards):
-    """
-
-
-    :param wildcards:
-    :return: dict
-    """
-    path_file = f"{samples_dir}{wildcards.samples}_R2.fastq.gz"
-    # if demultiplex:
-    #    path_file = f"{out_dir}0_demultiplex{wildcards.fastq}.R2.fastq.gz"
-
-    if Path(path_file).exists() or wildcards.samples in SAMPLES_PAIRED :
-        if mapping_tools in ["sampe", "samse"]:
-            return {"bam_in" : rules.bwa_sampe_sort_bam.output.bam_file,
-                    "R1": rules.bwa_sampe_sort_bam.input.R1,
-                    "R2": rules.bwa_sampe_sort_bam.input.R2
-                    }
-        elif mapping_tools in ["mem"]:
-            return {"bam_in" : rules.bwa_mem_PE_sort_bam.output.bam_file,
-                    "R1": rules.bwa_mem_PE_sort_bam.input.R1,
-                    "R2": rules.bwa_mem_PE_sort_bam.input.R2
-                    }
-    else:
-        if mapping_tools in ["sampe", "samse"]:
-            return {"bam_in" : rules.bwa_samse_sort_bam.output.bam_file,
-                    "R1": rules.bwa_samse_sort_bam.input.R1
-                    }
-        elif mapping_tools in ["mem"]:
-            return {"bam_in" : rules.bwa_mem_SE_sort_bam.output.bam_file,
-                    "R1": rules.bwa_mem_SE_sort_bam.input.R1,
-                    }
-def get_fastq_file_PE():
-    """return if file provide from demultiplex, cleanning or direct sample"""
+def get_fastq_file():
+    """return if file provide from cleanning or direct sample"""
 
     dico_mapping = {
                     "fasta": reference_file,
                      "index": rules.bwa_index.output.index
                     }
-
-    if cleanning:
+    if cleaning:
         dico_mapping.update({
-                    "R1" : rules.run_atropos_PE.output.R1,
-                    "R2" : rules.run_atropos_PE.output.R2
-                })
-    elif demultiplex and not cleanning:
-        dico_mapping.update({
-                    "R1" : f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
-                    "R2" : f"{out_dir}0_demultiplex/{{samples}}.R2.fastq.gz",
+                    "R1" : rules.run_atropos.output.R1,
+                    "R2" : rules.run_atropos.output.R2
                 })
     else:
         dico_mapping.update({
-                    "R1" :f"{samples_dir}{{samples}}_R1.fastq.gz",
-                    "R2" : f"{samples_dir}{{samples}}_R2.fastq.gz"
+                    "R1" :f"{fastq_dir}{{samples}}_R1.fastq.gz",
+                    "R2" : f"{fastq_dir}{{samples}}_R2.fastq.gz"
                 })
     # print(dico_mapping)
     return dico_mapping
-
-def get_fastq_file_SE():
-    """return if file provide from demultiplex, cleanning or direct sample"""
-
-    dico_mapping = {
-                    "fasta": reference_file,
-                     "index": rules.bwa_index.output.index
-                    }
-
-    if cleanning:
-        dico_mapping.update({
-                    "R1" : rules.run_atropos_PE.output.R1,
-                })
-    elif demultiplex and not cleanning:
-        dico_mapping.update({
-                    "R1" : f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
-                })
-    else:
-        dico_mapping.update({
-                    "R1" :f"{samples_dir}{{samples}}_R1.fastq.gz",
-                })
-    # print(dico_mapping)
-    return dico_mapping
-
-#*###############################################################################
-CHROMOSOMES = get_list_chromosome_names(reference_file)
-CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
-if config["DATA"]['mitochondrial_name'] != "":
-    CHROMOSOMES_WITHOUT_MITO.remove(config["DATA"]['mitochondrial_name'])
-FASTQ_FILE = None
-
-
-if demultiplex:
-    FASTQ_FILE, = glob_wildcards(samples_dir+"{fastq}_R1.fastq.gz", followlinks=True)
-    # print(f"FASTQ_FILE: {FASTQ_FILE}")
-    if Path(config["demultiplex_file"]).exists():
-        # SAMPLES = [ f"{smp}_R1.fastq.gz" for smp in pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()]
-        SAMPLES =  pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
-
-
-    # Auto check if data is paired with flag _R2
-    SAMPLES_PAIRED = []
-    SAMPLES_SINGLE = []
-    for sample in FASTQ_FILE:
-        if Path(f"{samples_dir}{sample}_R2.fastq.gz").exists():
-            SAMPLES_PAIRED = pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
-        else:
-            SAMPLES_SINGLE = pd.read_csv(Path(config["demultiplex_file"]).resolve().as_posix(), sep = "\t", usecols = [0], squeeze = True).unique()
-    # print(f"SAMPLES: {SAMPLES}")
-    # print(f"SAMPLES_SINGLE: {SAMPLES_SINGLE}")
-    # print(f"SAMPLES_PAIRED: {SAMPLES_PAIRED}")
-
-    # exit()
-
-else:
-    SAMPLES, = glob_wildcards(samples_dir+"{samples}_R1.fastq.gz", followlinks=True)
-    # Auto check if data is paired with flag _R2
-    SAMPLES_PAIRED = []
-    SAMPLES_SINGLE = []
-    for sample in SAMPLES:
-        if Path(f"{samples_dir}{sample}_R2.fastq.gz").exists():
-            SAMPLES_PAIRED.append(sample)
-        else:
-            SAMPLES_SINGLE.append(sample)
-
-# print(f"SAMPLES_SINGLE: {SAMPLES_SINGLE}")
-# print(f"SAMPLES_PAIRED: {SAMPLES_PAIRED}")
-# exit()
-
 
 def output_final(wildcars):
     """
@@ -213,22 +156,43 @@ def output_final(wildcars):
     :param wildcars:
     :return:
     """
-    dico_final = {"fasta" : f'{out_dir}8_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
-                  "report_vcf": f"{out_dir}report_vcf.html"}
-    if SNPcalling:
+    dico_final = {}
+    # dico_final = {"fasta" : f'{out_dir}8_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
+    #               "report_vcf": f"{out_dir}report_vcf.html"}
+    # if SNPcalling:
+    #     dico_final.update({
+    #                 "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
+    #             })
+    if cleaning:
         dico_final.update({
-                    "vcf" : f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
+                    "atropos_files_R1" : expand(rules.run_atropos.output.R1, samples = rattlersnp.samples),
+                    "atropos_files_R2" : expand(rules.run_atropos.output.R2, samples = rattlersnp.samples),
                 })
-    if cleanning:
+    if fastqc:
         dico_final.update({
-                    "fastQC_files_PE" : expand(f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS_fastqc.html", samples = SAMPLES_PAIRED),
-                    "fastQC_files_SE" : expand(f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS_fastqc.html", samples = SAMPLES_SINGLE),
-                })
+                    "fastQC_files_R1": expand(rules.run_fastqc.output.R1,samples=rattlersnp.samples),
+                    "fastQC_files_R2": expand(rules.run_fastqc.output.R2,samples=rattlersnp.samples),
+        })
+    if rattlersnp.mapping_activated:
+        dico_final.update({
+                    "bam": expand( f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai",samples=rattlersnp.samples),
+        })
+    if rattlersnp.mapping_stats_activated:
+        dico_final.update({
+            "html": expand(f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai",
+                samples=rattlersnp.samples),
+        })
+
     if build_stats:
         dico_final.update({
-                    "report" : f"{out_dir}report.html",
+                    "report" : f"{out_dir}1_mapping/STATS/report.html",
                 })
-    # print(dico_final)
+    if rattlersnp.calling_activated:
+        dico_final.update({
+                    "vcf_file": f'{out_dir}3_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
+                    "report": f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
+                })
+    pp.pprint(dico_final)
     return dico_final
 
 
@@ -238,8 +202,6 @@ rule final:
     input:
         unpack(output_final)
 
-
-# 0 index of genome file
 rule bwa_index:
     """make index with bwa for reference file"""
     threads: get_threads('bwa_index', 1)
@@ -252,8 +214,7 @@ rule bwa_index:
             output = f'{log_dir}bwa_index/{basename_reference}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+             Launching {{rule}}
                 Input:
                     - Fasta : {{input.fasta}}
                 Output:
@@ -262,98 +223,32 @@ rule bwa_index:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+            tools_config["MODULES"]["BWA"]
     shell:
-            config["MODULES"]["BWA"]+"""
+            """
                 bwa index {input.fasta} 1>{log.output} 2>{log.error}
             """
-if len(SAMPLES_PAIRED) > 0 and FASTQ_FILE:
-    rule run_GBSx_PE:
-        """run GBSx for demultipled file"""
-        threads: get_threads('run_GBSx_PE', 1)
-        input:
-                R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
-                R2 = expand(f"{samples_dir}{{fastq}}_R2.fastq.gz", fastq = FASTQ_FILE),
-                keyfile = config["demultiplex_file"]
-        output:
-                R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_PAIRED),
-                R2 = expand(f"{out_dir}0_demultiplex/{{smp}}.R2.fastq.gz", smp = SAMPLES_PAIRED)
-        params:
-                other_options = config["PARAMS_TOOLS"]["GBSx_PE"],
-                outdir = directory(f"{out_dir}0_demultiplex/"),
-        log :
-                error =  f'{log_dir}run_GBSx_PE/GBS.e',
-                output = f'{log_dir}run_GBSx_PE/GBS.o'
-        message:
-                f"""
-                {sep*108}
-                Execute {{rule}} for
-                    Input:
-                        - Fastq R1 : {{input.R1}}
-                        - Fastq R2 : {{input.R2}}
-                    Output:
-                        - Fastq R1 : {{output.R1}}
-                        - Fastq R2 : {{output.R2}}
-                    Others
-                        - Threads : {{threads}}
-                        - LOG error: {{log.error}}
-                        - LOG output: {{log.output}}
-                {sep*108}"""
-        shell: config["MODULES"]["GBSx"]+"""
-        java -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -f2 {input.R2} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
-        """
 
-if len(SAMPLES_SINGLE) > 0 and FASTQ_FILE:
-    rule run_GBSx_SE:
-        """run GBSx for demultipled file"""
-        threads: get_threads('run_GBSx_SE', 1)
-        input:
-                R1 = expand(f"{samples_dir}{{fastq}}_R1.fastq.gz", fastq = FASTQ_FILE),
-                keyfile = config["demultiplex_file"]
-        output:
-                R1 = expand(f"{out_dir}0_demultiplex/{{smp}}.R1.fastq.gz", smp = SAMPLES_SINGLE),
-        params:
-                other_options = config["PARAMS_TOOLS"]["GBSx_SE"],
-                outdir = directory(f"{out_dir}0_demultiplex/"),
-        log :
-                error =  f'{log_dir}run_GBSx_SE/GBS.e',
-                output = f'{log_dir}run_GBSx_SE/GBS.o'
-        message:
-                f"""
-                {sep*108}
-                Execute {{rule}} for
-                    Input:
-                        - Fastq R1 : {{input.R1}}
-                    Output:
-                        - Fastq R1 : {{output.R1}}
-                    Others
-                        - Threads : {{threads}}
-                        - LOG error: {{log.error}}
-                        - LOG output: {{log.output}}
-                {sep*108}"""
-        shell: config["MODULES"]["GBSx"]+"""
-        java -Xmx8G -jar $GBSx_PATH/GBSX_v1.3.jar --Demultiplexer -t {threads} -f1 {input.R1} -i {input.keyfile} {params.other_options} -gzip true -o {params.outdir}  1>{log.output} 2>{log.error}
-        """
-
-# 1=atropos PE
-rule run_atropos_PE:
+# 1=atropos
+rule run_atropos:
     """Run atropos for cleanning data"""
-    threads: get_threads('run_atropos_PE', 1)
+    threads: get_threads('run_atropos', 2)
     input:
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
-            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R2.fastq.gz",
+            R1 = f"{fastq_dir}{{samples}}_R1.fastq.gz",
+            R2 = f"{fastq_dir}{{samples}}_R2.fastq.gz"
     output:
-            R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS.fastq.gz",
-            R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS.fastq.gz"
+            R1 = f"{out_dir}0_cleaning/ATROPOS/{{samples}}_R1_ATROPOS.fastq.gz",
+            R2 = f"{out_dir}0_cleaning/ATROPOS/{{samples}}_R2_ATROPOS.fastq.gz"
     params:
-            other_options = config["PARAMS_TOOLS"]["ATROPOS_PE"]
+            other_options = config["PARAMS_TOOLS"]["ATROPOS"]
     log :
-            error =  f'{log_dir}run_atropos_PE/{{samples}}.e',
-            output = f'{log_dir}run_atropos_PE/{{samples}}.o'
+            error =  f'{log_dir}run_atropos/{{samples}}.e',
+            output = f'{log_dir}run_atropos/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fastq R1 : {{input.R1}}
                     - Fastq R2 : {{input.R2}}
@@ -364,61 +259,32 @@ rule run_atropos_PE:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["ATROPOS"]+"""
-        atropos trim --threads {threads} {params.other_options} -o {output.R1} -p {output.R2} -pe1 {input.R1} -pe2 {input.R2}  1>{log.output} 2>{log.error}
-    """
-
-# 1=atropos
-rule run_atropos_SE:
-    """Run atropos for cleanning data"""
-    threads: get_threads('run_atropos_SE', 1)
-    input:
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not demultiplex else f"{out_dir}0_demultiplex/{{samples}}.R1.fastq.gz",
-    output:
-            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS.fastq.gz"
-    params:
-            other_options = config["PARAMS_TOOLS"]["ATROPOS_SE"]
-    log :
-            error =  f'{log_dir}run_atropos_SE/{{samples}}.e',
-            output = f'{log_dir}run_atropos_SE/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Fastq R1 : {{input.R1}}
-                Output:
-                    - Fastq R1 : {{output.R1}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-            config["MODULES"]["ATROPOS"]+"""
-                atropos trim --threads {threads} {params.other_options} -o {output.R1} -se {input.R1}  1>{log.output} 2>{log.error}
             """
+    envmodules:
+        tools_config["MODULES"]["ATROPOS"]
+    shell:
+        """
+            atropos trim --threads {threads} {params.other_options} -o {output.R1} -p {output.R2} -pe1 {input.R1} -pe2 {input.R2}  1>{log.output} 2>{log.error}
+        """
 
-# 2=fastqc
-rule run_fastqc_PE:
+rule run_fastqc:
     """Run fastqc for controle data"""
-    threads: get_threads('run_fastqc_PE', 1)
+    threads: get_threads('run_fastqc', 1)
     input:
-            R1 = rules.run_atropos_PE.output.R1,
-            R2 = rules.run_atropos_PE.output.R2
+            R1 = rules.run_atropos.output.R1 if cleaning else f"{fastq_dir}{{samples}}_R1{rattlersnp.fastq_files_ext}",
+            R2 = rules.run_atropos.output.R2 if cleaning else f"{fastq_dir}{{samples}}_R2{rattlersnp.fastq_files_ext}"
     output:
-            R1 = f"{out_dir}0_cleanning/paired/{{samples}}_R1.ATROPOS_fastqc.html",
-            R2 = f"{out_dir}0_cleanning/paired/{{samples}}_R2.ATROPOS_fastqc.html"
+            R1 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R1{rattlersnp.cleaning_tool}_fastqc.html",
+            R2 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R2{rattlersnp.cleaning_tool}_fastqc.html"
     params:
+            outdir = directory(f"{out_dir}0_cleaning/FASTQC/"),
             other_options = config["PARAMS_TOOLS"]["FASTQC"]
     log :
             error =  f'{log_dir}run_fastqc_PE/{{samples}}.e',
             output = f'{log_dir}run_fastqc_PE/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fastq R1 : {{input.R1}}
                     - Fastq R2 : {{input.R2}}
@@ -429,53 +295,70 @@ rule run_fastqc_PE:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["FASTQC"]
     shell:
-            config["MODULES"]["FASTQC"]+"""
-                fastqc -t {threads} {params.other_options} {input.R1} {input.R2}  1>{log.output} 2>{log.error}
+            """
+                fastqc -t {threads} {params.other_options} -o {params.outdir} {input.R1} {input.R2}  1>{log.output} 2>{log.error}
             """
 
-rule run_fastqc_SE:
-    """Run fastqc for controle data"""
-    threads: get_threads('run_fastqc_SE', 1)
+
+rule bwa_mem_sort_bam:
+    """make bwa mem for all samples on reference"""
+    threads: get_threads('bwa_mem_sort_bam', 1)
     input:
-            R1 = rules.run_atropos_SE.output.R1
+            **get_fastq_file()
     output:
-            R1 = f"{out_dir}0_cleanning/single/{{samples}}_R1.ATROPOS_fastqc.html"
+            bam_file =  f"{out_dir}1_mapping/BWA_MEM/{{samples}}.bam"
     params:
-            other_options = config["PARAMS_TOOLS"]["FASTQC"]
-    log :
-            error =  f'{log_dir}run_fastqc_SE/{{samples}}.e',
-            output = f'{log_dir}run_fastqc_SE/{{samples}}.o'
+            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
+            other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
+            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
+    log:
+            error =  f'{log_dir}bwa_mem_sort_bam/{{samples}}.e',
+            output = f'{log_dir}bwa_mem_sort_bam/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
-                    - Fastq R1 : {{input.R1}}
+                    - Fasta : {{input.fasta}}
+                    - R1: {{input.R1}}
+                    - R2: {{input.R2}}
                 Output:
-                    - html R1 : {{output.R1}}
+                    - Bam: {{output.bam_file}}
+                Params:
+                    - other_options_bwa: {{params.other_options_bwa}}
+                    - other_options_samtools_view: {{params.other_options_samtools_view}}
+                    - other_options_samtools_sort: {{params.other_options_samtools_sort}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["FASTQC"]+"""
-        fastqc -t {threads}  {params.other_options} {input.R1}  1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["BWA"],
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+        """
+                (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
+                samtools view -@ {threads} {params.other_options_samtools_view} |
+                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+        """
 
-# 3=bwaAln
-rule run_bwa_aln_PE:
+
+rule run_bwa_aln:
     """make bwa aln for all samples PE on reference"""
     threads: get_threads('run_bwa_aln_PE', 1)
     input:
             fasta = reference_file,
             index = rules.bwa_index.output.index,
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R1 ,
-            R2 = f"{samples_dir}{{samples}}_R2.fastq.gz" if not cleanning else rules.run_atropos_PE.output.R2
+            R1 = f"{fastq_dir}{{samples}}_R1.fastq.gz" if not cleaning else rules.run_atropos.output.R1 ,
+            R2 = f"{fastq_dir}{{samples}}_R2.fastq.gz" if not cleaning else rules.run_atropos.output.R2
     output:
-            sai_R1 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R1.BWAALN.sai"),
-            sai_R2 = temp(f"{out_dir}1_mapping/paired/{{samples}}_R2.BWAALN.sai")
+            sai_R1 = temp(f"{out_dir}1_mapping/BWA_SAMPE/{{samples}}_R1.BWAALN.sai"),
+            sai_R2 = temp(f"{out_dir}1_mapping/BWA_SAMPE/{{samples}}_R2.BWAALN.sai")
     params:
             other_options = config["PARAMS_TOOLS"]["BWA_ALN"]
     log:
@@ -483,8 +366,7 @@ rule run_bwa_aln_PE:
             output = f'{log_dir}run_bwa_aln_PE/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
@@ -496,82 +378,16 @@ rule run_bwa_aln_PE:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["BWA"],
+        tools_config["MODULES"]["SAMTOOLS"]
     shell:
-            config["MODULES"]["BWA"]+"""
+            """
                 bwa aln -t {threads} {params.other_options} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error} &&
                 bwa aln -t {threads} {params.other_options} -f {output.sai_R2} {input.fasta} {input.R2} 1>{log.output} 2>{log.error}
             """
 
-rule run_bwa_aln_SE:
-    """make bwa aln for all samples SE on reference"""
-    threads: get_threads('run_bwa_aln_SE', 1)
-    input: 	fasta = reference_file,
-            index = rules.bwa_index.output.index,
-            R1 = f"{samples_dir}{{samples}}_R1.fastq.gz" if not cleanning else rules.run_atropos_SE.output.R1
-    output:
-            sai_R1 = temp(f"{out_dir}1_mapping/single/{{samples}}_R1.BWAALN.sai"),
-    params:
-            other_options = config["PARAMS_TOOLS"]["BWA_ALN"]
-    log:
-            error =  f'{log_dir}run_bwa_aln_SE/{{samples}}.e',
-            output = f'{log_dir}run_bwa_aln_SE/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Fasta : {{input.fasta}}
-                    - R1: {{input.R1}}
-                Output:
-                    - sai R1: temp({{output.sai_R1}})
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-            config["MODULES"]["BWA"]+"""
-                bwa aln -t {threads} {params.other_options} -f {output.sai_R1} {input.fasta} {input.R1} 1>{log.output} 2>{log.error}
-            """
-
-rule bwa_samse_sort_bam:
-    """make bwa samse for all samples SE on reference"""
-    threads: get_threads('bwa_samse_sort_bam', 1)
-    input: 	fasta = reference_file,
-            index = rules.bwa_index.output.index,
-            R1 = rules.run_bwa_aln_SE.input.R1,
-            sai_R1 = rules.run_bwa_aln_SE.output.sai_R1
-    output:
-            bam_file = f"{out_dir}1_mapping/single/samse/{{samples}}.bam"
-    params:
-            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMSE"],
-            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
-            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
-    log:
-            error =  f'{log_dir}bwa_samse_sort_bam/{{samples}}.e',
-            output = f'{log_dir}bwa_samse_sort_bam/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Fasta : {{input.fasta}}
-                    - R1: {{input.R1}}
-                Output:
-                    - Bam: {{output.bam_file}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-            config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                (bwa samse -r"{params.rg}" {params.other_options_bwa} {input.fasta} {input.sai_R1} {input.R1}  |
-                samtools view -@ {threads} {params.other_options_samtools_view}  |
-                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file}) 1>{log.output} 2>{log.error}
-            """
 
 rule bwa_sampe_sort_bam:
     """make bwa sampe for all samples PE on reference"""
@@ -579,12 +395,12 @@ rule bwa_sampe_sort_bam:
     input:
             fasta = reference_file,
             index = rules.bwa_index.output.index,
-            R1 = rules.run_bwa_aln_PE.input.R1,
-            R2 = rules.run_bwa_aln_PE.input.R2,
-            sai_R1 = rules.run_bwa_aln_PE.output.sai_R1,
-            sai_R2 = rules.run_bwa_aln_PE.output.sai_R2
+            R1 = rules.run_bwa_aln.input.R1,
+            R2 = rules.run_bwa_aln.input.R2,
+            sai_R1 = rules.run_bwa_aln.output.sai_R1,
+            sai_R2 = rules.run_bwa_aln.output.sai_R2
     output:
-            bam_file = f"{out_dir}1_mapping/paired/sampe/{{samples}}.bam"
+            bam_file = f"{out_dir}1_mapping/BWA_SAMPE/{{samples}}.bam"
     params:
             rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
             other_options_bwa = config["PARAMS_TOOLS"]["BWA_SAMPE"],
@@ -595,142 +411,77 @@ rule bwa_sampe_sort_bam:
             output = f'{log_dir}bwa_sampe_sort_bam/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fasta : {{input.fasta}}
                     - R1: {{input.R1}}
                     - R2: {{input.R2}}
                 Output:
                     - Bam: {{output.bam_file}}
+                Params:
+                    - other_options_bwa: {{params.other_options_bwa}}
+                    - other_options_samtools_view: {{params.other_options_samtools_view}}
+                    - other_options_samtools_sort: {{params.other_options_samtools_sort}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["BWA"],
+        tools_config["MODULES"]["SAMTOOLS"]
     shell:
-            config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
+            """
                 (bwa sampe -r"{params.rg}" {params.other_options_bwa} {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} |
                 samtools view -@ {threads} {params.other_options_samtools_view} |
                 samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
             """
-rule bwa_mem_PE_sort_bam:
-    """make bwa mem for all samples PE on reference"""
-    threads: 2
-    input:
-            **get_fastq_file_PE()
-    output:
-            bam_file =  f"{out_dir}1_mapping/paired/mem/{{samples}}.bam"
-    params:
-            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
-            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
-            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
-    log:
-            error =  f'{log_dir}bwa_mem_PE_sort_bam/{{samples}}.e',
-            output = f'{log_dir}bwa_mem_PE_sort_bam/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Fasta : {{input.fasta}}
-                    - R1: {{input.R1}}
-                    - R2: {{input.R2}}
-                Output:
-                    - Bam: {{output.bam_file}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-        config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
-                samtools view -@ {threads} {params.other_options_samtools_view} |
-                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
-        """
-rule bwa_mem_SE_sort_bam:
-    """make bwa mem for all samples SE on reference"""
-    threads: 2
-    input:
-            **get_fastq_file_SE()
-    output:
-            bam_file = f"{out_dir}1_mapping/single/mem/{{samples}}.bam"
-    params:
-            rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
-            other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
-            other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
-            other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
-    log:
-            error =  f'{log_dir}bwa_mem_SE_sort_bam/{{samples}}.e',
-            output = f'{log_dir}bwa_mem_SE_sort_bam/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Fasta : {{input.fasta}}
-                    - R1: {{input.R1}}
-                Output:
-                    - Bam: {{output.bam_file}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-        config["MODULES"]["BWA"]+"\n"+config["MODULES"]["SAMTOOLS"]+"""
-                (bwa mem -t {threads} {input.fasta} {input.R1} -R '{params.rg}'|
-                samtools view -@ {threads} {params.other_options_samtools_view} |
-                samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
-        """
 
-rule merge_bam_directories:
-    """Merge paired and single on same directory and index"""
-    threads: get_threads('merge_bam_directories', 1)
+rule samtools_index:
+    """index bam for use stats"""
+    threads: get_threads('samtools_index', 1)
     input:
-            unpack(get_files_path)
+            bam = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam"
     output:
-            bam_all = f"{out_dir}1_mapping/all/{{samples}}.bam",
-            bai = f"{out_dir}1_mapping/all/{{samples}}.bam.bai"
+            bai = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai"
     log:
-            error =  f'{log_dir}merge_bam_directories/{{samples}}.e',
-            output = f'{log_dir}merge_bam_directories/{{samples}}.o'
+            error =  f'{log_dir}samtools_index/{{samples}}.e',
+            output = f'{log_dir}samtools_index/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
-                    - Bam : {{input.bam_in}}
+                    - Bam : {{input.bam}}
                 Output:
-                    - Bam : {{output.bam_all}}
                     - Bai : {{output.bai}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-            config["MODULES"]["SAMTOOLS"]+"""
-                ln -s {input.bam_in} {output.bam_all} 1>{log.output} 2>{log.error}
-                samtools index -@ {threads} {output.bam_all} 1>>{log.output} 2>>{log.error}
             """
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+            """
+                samtools index -@ {threads} {input.bam} 1>{log.output} 2>{log.error}
+            """
+
+
 ####### Stats
 rule samtools_idxstats:
-    """apply samtools idxstats on all bam SE end PE"""
+    """apply samtools idxstats on all bam"""
     threads: get_threads('samtools_idxstats', 1)
     input:
-            bam = rules.merge_bam_directories.output.bam_all
+            bam = rules.samtools_index.input.bam,
+            bai = rules.samtools_index.output.bai
     output:
-            txt_file = f"{out_dir}2_mapping_stats/all/{{samples}}_IDXSTATS.txt"
+            txt_file = f"{out_dir}1_mapping/STATS/idxstats/{{samples}}_IDXSTATS.txt"
     log:
             error =  f'{log_dir}samtools_idxstats/{{samples}}.e',
             output = f'{log_dir}samtools_idxstats/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}} for
                 Input:
                     - Bam : {{input.bam}}
                 Output:
@@ -739,25 +490,28 @@ rule samtools_idxstats:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
     shell:
-            config["MODULES"]["SAMTOOLS"]+"""
+            """
                 samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
             """
+
+
 rule merge_idxstats:
     """merge all samtools idxstats files"""
     threads : get_threads('merge_idxstats', 1)
     input :
-            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = SAMPLES),
+            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlersnp.samples),
     output :
-            csv_resume_merge = report(f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv", category="Resume mapping infos")
+            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_resume.csv", category="Resume mapping infos")
     log:
             error =  f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
             output = f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}} for
                 Input:
                     - CSV_files : {{input.csv_resume}}
                 Output:
@@ -766,81 +520,82 @@ rule merge_idxstats:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
     run :
         parse_idxstats(input.csv_resume, output.csv_resume_merge, sep="\t")
 
 ########################## STATS BAM
-rule samtools_depth:
-    """apply samtools depth on all bam SE end PE"""
-    threads: get_threads('samtools_depth', 1)
-    input:
-            bam = rules.merge_bam_directories.output.bam_all
-    output:
-            txt_file = f"{out_dir}2_mapping_stats/all/{{samples}}_DEPTH.txt"
-    params:
-            other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
-    log:
-            error =  f'{log_dir}samtools_depth/{{samples}}.e',
-            output = f'{log_dir}samtools_depth/{{samples}}.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - Bam : {{input.bam}}
-                Output:
-                    - txt : {{output.txt_file}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-            config["MODULES"]["SAMTOOLS"]+"""
-                samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
-            """
+# rule samtools_depth:
+#     """apply samtools depth on all bam SE end PE"""
+#     threads: get_threads('samtools_depth', 1)
+#     input:
+#             bam = rules.samtools_index.input.bam,
+#             bai = rules.samtools_index.output.bai
+#     output:
+#             txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
+#     params:
+#             other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
+#     log:
+#             error =  f'{log_dir}samtools_depth/{{samples}}.e',
+#             output = f'{log_dir}samtools_depth/{{samples}}.o'
+#     message:
+#             f"""
+#             Execute {{rule}} for
+#                 Input:
+#                     - Bam : {{input.bam}}
+#                 Output:
+#                     - txt : {{output.txt_file}}
+#                 Others
+#                     - Threads : {{threads}}
+#                     - LOG error: {{log.error}}
+#                     - LOG output: {{log.output}}
+#             """
+#     envmodules:
+#         tools_config["MODULES"]["SAMTOOLS"]
+#     shell:
+#             """
+#                 samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+#             """
 
 rule bam_stats_to_csv:
     """build csv with mean depth, median depth and mean coverage for all bam"""
     threads : get_threads('bam_stats_to_csv', 1)
     input :
-            bam_file = rules.merge_bam_directories.output.bam_all
+            bam = rules.samtools_index.input.bam,
+            bai = rules.samtools_index.output.bai
     output :
-            csv_resume = temp(f'{out_dir}2_mapping_stats/all/{{samples}}_Depth_resume.csv')
+            csv_resume = temp(f'{out_dir}1_mapping/STATS/depth/{{samples}}.csv')
     log:
             error =  f'{log_dir}bam_stats_to_csv/{{samples}}.e',
             output = f'{log_dir}bam_stats_to_csv/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
-                    - Bam : {{input.bam_file}}
+                    - Bam : {{input.bam}}
                 Output:
                     - CSV : temp({{output.csv_resume}})
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
     run :
-        check_mapping_stats(input.bam_file, output.csv_resume, sep="\t")
+        check_mapping_stats(input.bam, output.csv_resume, sep="\t")
 
 rule merge_bam_stats:
     """merge all bam_stats_to_csv files"""
     threads : get_threads('merge_bam_stats', 1)
     input :
-            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = SAMPLES),
+            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlersnp.samples),
     output :
-            csv_resume_merge = report(f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv", category="Resume mapping infos")
+            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping infos")
     log:
             error =  f'{log_dir}merge_bam_stats/mergeResume.e',
             output = f'{log_dir}merge_bam_stats/mergeResume.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - CSV list : {{input.csv_resume}}
                 Output:
@@ -849,21 +604,48 @@ rule merge_bam_stats:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
     run :
         merge_bam_stats_csv(input.csv_resume, output.csv_resume_merge, sep="\t")
 
-########################## Mapping améliorations
-# 11=picardToolsMarkDuplicates
 
+
+rule report:
+    threads: get_threads('report', 1)
+    input:
+         depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
+         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge,
+    output:
+        report = f"{out_dir}1_mapping/STATS/report.html",
+    log:
+            error =  f'{log_dir}report/report.e',
+            output = f'{log_dir}report/report.o'
+    message:
+            f"""
+            Launching {{rule}}
+                Input:
+                    - csv : {{input.depth_resume}}
+                    - csv : {{input.idxstats_resume}}
+                Output:
+                    - report : {{output.report}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    script:
+        """script/report.Rmd"""
+
+###################################################################################
 rule picardTools_mark_duplicates:
-    """apply gatk_realigner_target_creator on all bam SE end PE"""
+    """apply picardTools_mark_duplicates on all bam"""
     threads: get_threads('picardTools_mark_duplicates', 1)
     input:
-            bam_file = rules.merge_bam_directories.output.bam_all
+            bam_file = rules.samtools_index.input.bam if rattlersnp.mapping_tool_activated else f"{rattlersnp.bam_path}{{samples}}.bam"
     output:
-            bam_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.bam",
-            txt_file = f"{out_dir}1_mapping/all/{{samples}}_picardTools-mark-duplicates.metrics"
+            bam_file = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
+            txt_file = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
+
     params:
             other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARK_DUPLICATES"]
     log:
@@ -871,8 +653,7 @@ rule picardTools_mark_duplicates:
             output = f'{log_dir}picardTools_mark_duplicates/{{samples}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Bam : {{input.bam_file}}
                 Output:
@@ -882,10 +663,14 @@ rule picardTools_mark_duplicates:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["PICARDTOOLS"]+"""
-        java -jar $PICARDPATH/picard.jar MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["PICARDTOOLS"]
+    shell:
+        """
+            java -jar $PICARDPATH/picard.jar MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
+        """
+
 
 ########################## SNP calling
 rule create_sequence_dict:
@@ -902,8 +687,7 @@ rule create_sequence_dict:
             output = f'{log_dir}create_sequence_dict/{basename_reference}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fasta : {{input.reference}}
                 Output:
@@ -912,10 +696,13 @@ rule create_sequence_dict:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["GATK4"]+"""
-    gatk CreateSequenceDictionary --java-options "-Xmx{params.java_mem}" -R {input.reference} 1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["GATK4"]
+    shell:
+        """
+            gatk CreateSequenceDictionary --java-options "-Xmx{params.java_mem}" -R {input.reference} 1>{log.output} 2>{log.error}
+        """
 
 rule create_sequence_fai:
     """create sequence fai for gatk_HaplotypeCaller reference"""
@@ -929,8 +716,7 @@ rule create_sequence_fai:
             output = f'{log_dir}create_sequence_fai/{basename_reference}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Fasta : {{input.reference}}
                 Output:
@@ -939,10 +725,13 @@ rule create_sequence_fai:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["SAMTOOLS"]+"""
-    samtools faidx {input.reference} 1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+        """
+            samtools faidx {input.reference} 1>{log.output} 2>{log.error}
+        """
 
 rule gatk_HaplotypeCaller:
     """apply gatk_HaplotypeCaller on all bam SE end PE"""
@@ -953,7 +742,7 @@ rule gatk_HaplotypeCaller:
             dict = rules.create_sequence_dict.output.dict,
             fai = rules.create_sequence_fai.output.fai
     output:
-            vcf_file = f"{out_dir}3_snp_calling/{{samples}}-{{chromosomes}}_GATK4.gvcf"
+            vcf_file = f"{out_dir}2_snp_calling/GATK_HaplotypeCaller/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
             java_mem="8g",                  # TODO add argument to cluster_config
             interval = "{chromosomes}",
@@ -963,8 +752,7 @@ rule gatk_HaplotypeCaller:
             output = f'{log_dir}gatk_HaplotypeCaller/{{samples}}_{{chromosomes}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Bam : {{input.bam_file}}
                     - Fasta : {{input.reference}}
@@ -976,13 +764,16 @@ rule gatk_HaplotypeCaller:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["GATK4"]+"""
-    gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
-  {params.other_options} \
-    --native-pair-hmm-threads {threads} \
-    -L {params.interval} 1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["GATK4"]
+    shell:
+         """
+            gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
+            {params.other_options} \
+            --native-pair-hmm-threads {threads} \
+            -L {params.interval} 1>{log.output} 2>{log.error}
+         """
 
 
 def get_gvcf_list(list):
@@ -993,23 +784,22 @@ def get_gvcf_list(list):
 rule gatk_GenomicsDBImport:
     """apply GenomicsDBImport on all gvcf by chromosomes """
     threads: get_threads('gatk_GenomicsDBImport', 1)
-    input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}"),
+    input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlersnp.samples , chromosomes = "{chromosomes}"),
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict,
     output:
-            db = directory(f"{out_dir}4_DB_import/DB_{{chromosomes}}"),
+            db = directory(f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}"),
     params:
             java_mem="20g",                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
-            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = SAMPLES , chromosomes = "{chromosomes}")),
+            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlersnp.samples , chromosomes = "{chromosomes}")),
             other_options = config["PARAMS_TOOLS"]["GATK_GENOMICSDBIMPORT"]
     log:
             error =  f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.e',
             output = f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - Bam : {{params.str_join}}
                     - Fasta : {{input.reference}}
@@ -1021,13 +811,16 @@ rule gatk_GenomicsDBImport:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
-    shell: config["MODULES"]["GATK4"]+"""
-    gatk GenomicsDBImport --java-options "-Xmx{params.java_mem}" -R {input.reference} {params.str_join} \
-    --genomicsdb-workspace-path {output.db} \
-    {params.other_options} \
-    -L {params.interval} 1>{log.output} 2>{log.error}
-    """
+            """
+    envmodules:
+        tools_config["MODULES"]["GATK4"]
+    shell:
+         """
+            gatk GenomicsDBImport --java-options "-Xmx{params.java_mem}" -R {input.reference} {params.str_join} \
+            --genomicsdb-workspace-path {output.db} \
+            {params.other_options} \
+            -L {params.interval} 1>{log.output} 2>{log.error}
+         """
 
 rule gatk_GenotypeGVCFs_merge:
     """apply GenotypeGVCFs on all gvcf"""
@@ -1037,7 +830,7 @@ rule gatk_GenotypeGVCFs_merge:
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict
     output:
-            vcf_file = f'{out_dir}3_snp_calling/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
+            vcf_file = f'{out_dir}2_snp_calling/SplitByChromosome/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
     params:
             java_mem="30g",              # TODO add argument to cluster_config
             other_options = config["PARAMS_TOOLS"]["GATK_GENOTYPEGVCFS"]
@@ -1046,8 +839,7 @@ rule gatk_GenotypeGVCFs_merge:
             output = f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - db : {{input.db}}
                     - Fasta : {{input.reference}}
@@ -1058,9 +850,11 @@ rule gatk_GenotypeGVCFs_merge:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["GATK4"]
     shell:
-        config["MODULES"]["GATK4"]+"""
+        """
             gatk GenotypeGVCFs --java-options "-Xmx{params.java_mem}" -R {input.reference} -V gendb://{input.db} -O {output.vcf_file} {params.other_options} 1>{log.output} 2>{log.error}
         """
 
@@ -1070,15 +864,14 @@ rule bcftools_concat:
             vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES),
             vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES_WITHOUT_MITO),
     output:
-            vcf_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz',
-            tbi_file = f'{out_dir}5_snp_calling_final/All_samples_GenotypeGVCFs.vcf.gz.tbi',
+            vcf_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
+            tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz.tbi',
     log:
             error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
             output = f'{log_dir}bcftools_concat/bcftools_concat.o'
     message:
             f"""
-            {sep*108}
-            Execute {{rule}} for
+            Launching {{rule}}
                 Input:
                     - vcf : {{input.vcf_file}}
                 Output:
@@ -1087,72 +880,16 @@ rule bcftools_concat:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["BCFTOOLS"]
     shell:
-        config["MODULES"]["BCFTOOLS"]+"""
+        """
             bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z 1>{log.output} 2>{log.error}
             bcftools index --threads {threads} --tbi {output.vcf_file} 1>>{log.output} 2>>{log.error}
         """
 
-rule vcftools_filter:
-    threads: get_threads('vcftools_filter', 1)
-    input:
-            vcf_file_all = rules.bcftools_concat.output.vcf_file
-    output:
-            vcf_file = f'{out_dir}7_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.vcf.gz',
-    params:
-            other_options = config["PARAMS_TOOLS"]["VCFTOOLS"]
-    log:
-            error =  f'{log_dir}vcftools_filter/vcftools_filter.e',
-            output = f'{log_dir}vcftools_filter/vcftools_filter.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - vcf : {{input.vcf_file_all}}
-                Output:
-                    - vcf : {{output.vcf_file}}
-                Others
-                    - Other options {{params.other_options}}
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-        config["MODULES"]["VCFTOOLS"]+"""
-            vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout  | sed -r "s#\.\/\.#.#g" | bgzip -c 1> {output.vcf_file}
-        """
 
-rule vcf_to_fasta:
-    threads: get_threads('vcf_to_fasta', 1)
-    input:
-            vcf_file_filter = rules.vcftools_filter.output.vcf_file
-    output:
-            fasta = f'{out_dir}8_fasta_file/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
-    params:
-            fasta = f'{out_dir}7_snp_calling_filter/All_samples_GenotypeGVCFs_vcftools-filter.min4.fasta',
-    log:
-            error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta.e',
-            output = f'{log_dir}vcf_to_fasta/vcf_to_fasta.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - vcf : {{input.vcf_file_filter}}
-                Output:
-                    - fasta : {{output.fasta}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    shell:
-        config["MODULES"]["PYTHON3"]+"""
-    python3 script/vcf2phylip.py -i {input.vcf_file_filter} -p -f
-    mv {params.fasta} {output.fasta}
-    """
 ######################################"
 # VCF STATS
 ######################################"
@@ -1161,18 +898,17 @@ rule vcf_stats:
     input:
             vcf_file_all = rules.bcftools_concat.output.vcf_file
     output:
-            freq = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.frq',
-            depth = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.idepth',
-            depth_mean = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.ldepth.mean',
-            qual = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.lqual',
-            missing_ind = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.imiss',
-            miss = f'{out_dir}6_snp_calling_stats/All_samples_GenotypeGVCFs.lmiss',
+            freq = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.frq',
+            depth = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.idepth',
+            depth_mean = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.ldepth.mean',
+            qual = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.lqual',
+            missing_ind = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.imiss',
+            miss = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.lmiss',
     log:
             error =  f'{log_dir}vcf_stats/vcftools.e',
             output = f'{log_dir}vcf_stats/vcftools.o'
     message:
             f"""
-            {sep*108}
             Execute {{rule}} for
                 Input:
                     - vcf : {{input.vcf_file_all}}
@@ -1187,16 +923,19 @@ rule vcf_stats:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
+    envmodules:
+        tools_config["MODULES"]["VCFTOOLS"],
+        tools_config["MODULES"]["SAMTOOLS"]
     shell:
-        config["MODULES"]["VCFTOOLS"]+config["MODULES"]["SAMTOOLS"]+"""
+        """
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --freq2 --max-alleles 3 --stdout 1> {output.freq}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --depth --stdout 1> {output.depth}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-mean-depth --stdout 1> {output.depth_mean}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-quality --stdout 1> {output.qual}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-indv --stdout 1> {output.missing_ind}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}
-            cat {output.missing_ind} | awk \'\{if($5>0.75)print $1\}\'|grep -v INDV> remove-indv_75perc
+            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV> remove-indv_75perc
         """
 
 rule report_vcf:
@@ -1209,13 +948,12 @@ rule report_vcf:
             missing_ind = rules.vcf_stats.output.missing_ind,
             miss = rules.vcf_stats.output.miss
     output:
-            report = f"{out_dir}report_vcf.html",
+            report = f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
     log:
             error =  f'{log_dir}report_vcf/report.e',
             output = f'{log_dir}report_vcf/report.o'
     message:
             f"""
-            {sep*108}
             Execute {{rule}} for
                 Input:
                     - freq : {{input.freq}}
@@ -1230,40 +968,9 @@ rule report_vcf:
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
                     - LOG output: {{log.output}}
-            {sep*108}"""
+            """
     script:
         """script/report_vcf.Rmd"""
-
-rule report:
-    threads: get_threads('report', 1)
-    input:
-         depth_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_Depth_resume.csv",
-         idxstats_resume = f"{out_dir}2_mapping_stats/resume/all_mapping_stats_resume.csv",
-    output:
-        report = f"{out_dir}report.html",
-    log:
-            error =  f'{log_dir}report/report.e',
-            output = f'{log_dir}report/report.o'
-    message:
-            f"""
-            {sep*108}
-            Execute {{rule}} for
-                Input:
-                    - csv : {{input.depth_resume}}
-                    - csv : {{input.idxstats_resume}}
-                Output:
-                    - report : {{output.report}}
-                Others
-                    - Threads : {{threads}}
-                    - LOG error: {{log.error}}
-                    - LOG output: {{log.output}}
-            {sep*108}"""
-    script:
-        """script/report.Rmd"""
-
-
-
-
 ################################################################################
 # create log dir path
 build_log_path(debug=False)

@@ -35,11 +35,12 @@ suppressMessages(library('htmltools', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('htmlwidgets', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('gridExtra', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('tidyverse', warn.conflict = FALSE, quietly = TRUE))
+#suppressMessages(library('tidyverse', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('magrittr', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('stringr', warn.conflict = FALSE, quietly = TRUE))
 
-setwd("~/work/elisabeth/hilaire/GBS-2020-bipolaris/workflow-bipolaris/5_snp_calling_final")
+#setwd("~/work/elisabeth/hilaire/GBS-2020-bipolaris/workflow-bipolaris/5_snp_calling_final")
 
 basename <- tools::file_path_sans_ext(snakemake@input$freq)
 ```

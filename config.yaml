@@ -4,10 +4,9 @@
 ####################
 # Input output data options
 'DATA':
-    'directories':
-        'samples_dir': "/work/sravel/mapping/fastq/"       # samples dir
-        'reference_file': "/work/sravel/mapping/ref/Mycfi2_wg_ed.fasta"       # references dir
-        'out_dir': "/work/sravel/mapping/pop_genome_86_samples-bwa-mem/"       # Out directory
+    'samples_dir': "/work/sravel/mapping/fastq/"       # samples dir
+    'reference_file': "/work/sravel/mapping/ref/Mycfi2_wg_ed.fasta"       # references dir
+    'out_dir': "/work/sravel/mapping/pop_genome_86_samples-bwa-mem/"       # Out directory
     mitochondrial_name : "mtDNA"
 ##################
 # Pipeline options
