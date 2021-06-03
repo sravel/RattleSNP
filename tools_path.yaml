@@ -3,13 +3,13 @@
 #
 # the variable must load soft on the $PATH environment
 MODULES:
-    "SAMTOOLS": "bioinfo/samtools/1.9"                  # use for filter reads and convert sam to bam
-    "PYTHON3": "system/python/3.7.3"                    # Python3 >=3.6 with require libraries
-    "BWA": "bioinfo/bwa/0.7.15"                         # for make the mapping
-    "ATROPOS": "system/python/3.7.3"                    # for call atropos
-    "FASTQC": "bioinfo/FastQC/0.11.7"                   # for control quality
-    "PICARDTOOLS": "bioinfo/picard-tools/2.7.0"         # for control quality
-    "GATK4": "bioinfo/GATK/4.1.4.0"                     # for control quality
-    "BCFTOOLS": "bioinfo/bcftools/1.9"                  # for contact vcf
-    "VCFTOOLS": "bioinfo/vcftools/0.1.14_zlib-1.2.8"    # for filter vcf
+    "SAMTOOLS": "samtools/1.10"                  # use for filter reads and convert sam to bam
+    "PYTHON3": "python/3.7"                    # Python3 >=3.6 with require libraries
+    "BWA": "bwa/0.7.17"                         # for make the mapping
+    "ATROPOS": ""                    # for call atropos
+    "FASTQC": "fastqc/0.11.9"                   # for control quality
+    "PICARDTOOLS": "picard/2.23.5"         # for control quality
+    "GATK4": "gatk4/4.2.0.0"                     # for control quality
+    "BCFTOOLS": "bcftools/1.10.2"                  # for contact vcf
+    "VCFTOOLS": "vcftools/0.1.16"    # for filter vcf
 
