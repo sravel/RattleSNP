@@ -1,0 +1,99 @@
+__default__:
+    cpus-per-task : 4
+    ntasks : 1
+    mem-per-cpu : 4G
+    partition : fast
+    output : 'logs/stdout/{rule}/{wildcards}'
+    error : 'logs/error/{rule}/{wildcards}'
+    job-name : 'JOBNAME.{rule}.{wildcards}'
+
+bwa_index:
+    cpus-per-task : 1
+    partition : "fast"
+
+run_atropos:
+    cpus-per-task : 6
+    partition : "fast"
+
+run_fastqc:
+    cpus-per-task : 2
+    partition : "fast"
+
+run_bwa_aln_PE:
+    cpus-per-task : 6
+    mem-per-cpu : 4G
+    partition : "long"
+
+bwa_sampe_sort_bam:
+    cpus-per-task : 6
+    mem-per-cpu : 4G
+    partition : "long"
+
+bwa_mem_sort_bam:
+    cpus-per-task : 6
+    mem-per-cpu : 4G
+    partition : "long"
+
+samtools_index:
+    partition : "fast"
+
+samtools_idxstats:
+    cpus-per-task : 4
+    mem-per-cpu : 4G
+    partition : "fast"
+
+samtools_depth:
+    mem: "-l mem_free=4G"
+
+merge_idxstats:
+     cpus-per-task : 4
+    mem-per-cpu : 4G
+    partition : "fast"
+
+bam_stats_to_csv:
+    mem: "-l mem_free=20G"
+
+merge_bam_stats:
+    cpus-per-task : 1
+    partition : "fast"
+
+picardTools_mark_duplicates:
+    cpus-per-task : 1
+    mem-per-cpu : 20G
+    partition : "long"
+
+gatk_HaplotypeCaller:
+    javaMem: "20g"
+    cpus-per-task : 4
+    mem-per-cpu : 20G
+    partition : "long"
+
+gatk_GenomicsDBImport:
+    javaMem: "20g"
+    cpus-per-task : 1
+    mem-per-cpu : 20G
+    partition : "long"
+
+
+gatk_GenotypeGVCFs_merge:
+    javaMem: "30g"
+    cpus-per-task : 1
+    mem-per-cpu : 30G
+    partition : "long"
+
+create_sequence_dict:
+    javaMem: "10g"
+    cpus-per-task : 1
+    mem-per-cpu : 10G
+    partition : "fast"
+
+bcftools_concat:
+    cpus-per-task : 10
+    partition : "fast"
+    
+vcftools_filter:
+    cpus-per-task : 10
+    partition : "fast"
+    
+    
+    
