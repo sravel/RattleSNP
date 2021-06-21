@@ -1,6 +1,0 @@
-{
-    "SBATCH_DEFAULTS": "--export=ALL --job-name={rule} --output={logdir}/{log}.log_%j --error={logdir}/{log}.log_%j",
-    "CLUSTER_NAME": "",
-    "CLUSTER_CONFIG": "/shared/home/sravel/.config/snakemake/CulebrONT/cluster_config.yaml",
-    "ADVANCED_ARGUMENT_CONVERSION": "no"
-}
