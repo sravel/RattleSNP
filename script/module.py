@@ -308,7 +308,7 @@ class RattlerSNP(object):
             self.__check_fastq_files()
             self.samples, = glob_wildcards(f"{self.fastq_path}{{fastq}}_R1{self.fastq_files_ext}", followlinks=True)
             for sample in self.samples:
-                if not Path(f"{self.fastq_dir}{sample}_R2{self.fastq_files_ext}").exists():
+                if not Path(f"{self.fastq_path}{sample}_R2{self.fastq_files_ext}").exists():
                     ValueError(f"DATA CHECKING FAIL : The samples '{sample}' are single-end, please only use paired data: \n")
             # check reference file
             self.__check_file(section="DATA", key="REFERENCE_FILE")

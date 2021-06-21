@@ -57,7 +57,11 @@ if not workflow.overwrite_configfiles:
 else:
     path_config = workflow.overwrite_configfiles[0]
 
-cluster_config: RATTLERSNP_PATH.joinpath("cluster_config.yaml")
+# print(workflow.overwrite_clusterconfig)
+# print(cluster_config)
+# print("\n".join(list(workflow.__dict__.keys())))
+
+# cluster_config: workflow.overwrite_clusterconfig
 tools_config  = load_configfile(RATTLERSNP_PATH.joinpath("tools_path.yaml"))
 
 
@@ -68,8 +72,12 @@ tools_config  = load_configfile(RATTLERSNP_PATH.joinpath("tools_path.yaml"))
 rattlersnp = RattlerSNP(config, path_config, tools_config, RATTLERSNP_PATH)
 # print(rattlersnp.export_use_yaml)
 
+# print(pp.pprint(workflow.__dict__))
+# exit()
+
+
 # print for debug:
-logger.debug(print(rattlersnp))
+# logger.debug(print(rattlersnp))
 
 
 ###############################################################################
@@ -192,7 +200,7 @@ def output_final(wildcars):
                     "vcf_file": f'{out_dir}3_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
                     "report": f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
                 })
-    pp.pprint(dico_final)
+    # pp.pprint(dico_final)
     return dico_final
 
 

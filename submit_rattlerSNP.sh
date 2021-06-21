@@ -4,7 +4,8 @@
 #SBATCH --error slurm-%x_%j.log
 #SBATCH --partition=long
 
-config="None"
+profile=$HOME"/.config/snakemake/RattleSNP"
+
 # module help
 function help
 {
@@ -51,21 +52,23 @@ if [ ! -z "$config" ] && [ -e $config ]; then
     config=`readlink -m $config`
     echo "CONFIG FILE IS $config"
     # SLURM JOBS PROFILES
-    if [ ! -z "$cluster_config" ] && [ -e $cluster_config ]; then
-      cluster_config=`readlink -m $cluster_config`
-      echo "CLUSTER CONFIG FILE IS $cluster_config"
-    snakemake --cores -p -s $RATTLERSNP/Snakefile \
+  if [ ! -z "$cluster_config" ] && [ -e $cluster_config ]; then
+    cluster_config=`readlink -m $cluster_config`
+    echo "CLUSTER CONFIG FILE IS $cluster_config"
+    snakemake -j 100 -p -s $RATTLERSNP/Snakefile \
     --configfile $config \
     --cluster-config $cluster_config \
-    --profile /shared/home/jcarlier/.config/snakemake/rattleSNP
+    --profile $profile
   else
-    snakemake --cores -p -s $RATTLERSNP/Snakefile \
+    snakemake -j 100 -p -s $RATTLERSNP/Snakefile \
     --configfile $config \
-    --profile /shared/home/jcarlier/.config/snakemake/rattleSNP
+    --cluster-config $profile"/cluster_config.yaml" \
+    --profile $profile
   fi
 else
     echo "configfile = "$config
     echo "cluster_config = "$cluster_config
+    echo "profile = "$profile
     printf "\033[31m \n\n You must add a valid config file !!!!!!!!!!!! \n\n"
     help
 fi
