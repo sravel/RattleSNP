@@ -17,7 +17,7 @@ from script.module import RattleSNP, get_last_version, get_version, get_list_chr
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
 
-# recovery basedir where RattlerSNP was installed
+# recovery basedir where RattleSNP was installed
 basedir = workflow.basedir
 RATTLESNP_PATH = Path(basedir)
 
@@ -69,15 +69,15 @@ tools_config  = load_configfile(RATTLESNP_PATH.joinpath("tools_path.yaml"))
 # --- Verification Configuration Files --- #
 # using schemas to check mandatory value from yaml format
 # print(config)
-rattlersnp = RattleSNP(config, path_config, tools_config, RATTLESNP_PATH)
-# print(rattlersnp.export_use_yaml)
+rattlesnp = RattleSNP(config, path_config, tools_config, RATTLESNP_PATH)
+# print(rattlesnp.export_use_yaml)
 
 # print(pp.pprint(workflow.__dict__))
 # exit()
 
 
 # print for debug:
-# logger.debug(print(rattlersnp))
+# logger.debug(print(rattlesnp))
 
 
 ###############################################################################
@@ -173,29 +173,29 @@ def output_final(wildcars):
     #             })
     if cleaning:
         dico_final.update({
-                    "atropos_files_R1" : expand(rules.run_atropos.output.R1, samples = rattlersnp.samples),
-                    "atropos_files_R2" : expand(rules.run_atropos.output.R2, samples = rattlersnp.samples),
+                    "atropos_files_R1" : expand(rules.run_atropos.output.R1, samples = rattlesnp.samples),
+                    "atropos_files_R2" : expand(rules.run_atropos.output.R2, samples = rattlesnp.samples),
                 })
     if fastqc:
         dico_final.update({
-                    "fastQC_files_R1": expand(rules.run_fastqc.output.R1,samples=rattlersnp.samples),
-                    "fastQC_files_R2": expand(rules.run_fastqc.output.R2,samples=rattlersnp.samples),
+                    "fastQC_files_R1": expand(rules.run_fastqc.output.R1,samples=rattlesnp.samples),
+                    "fastQC_files_R2": expand(rules.run_fastqc.output.R2,samples=rattlesnp.samples),
         })
-    if rattlersnp.mapping_activated:
+    if rattlesnp.mapping_activated:
         dico_final.update({
-                    "bam": expand( f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai",samples=rattlersnp.samples),
+                    "bam": expand( f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai",samples=rattlesnp.samples),
         })
-    if rattlersnp.mapping_stats_activated:
+    if rattlesnp.mapping_stats_activated:
         dico_final.update({
-            "html": expand(f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai",
-                samples=rattlersnp.samples),
+            "html": expand(f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai",
+                samples=rattlesnp.samples),
         })
 
     if build_stats:
         dico_final.update({
                     "report" : f"{out_dir}1_mapping/STATS/report.html",
                 })
-    if rattlersnp.calling_activated:
+    if rattlesnp.calling_activated:
         dico_final.update({
                     "vcf_file": f'{out_dir}3_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
                     "report": f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
@@ -279,11 +279,11 @@ rule run_fastqc:
     """Run fastqc for controle data"""
     threads: get_threads('run_fastqc', 1)
     input:
-            R1 = rules.run_atropos.output.R1 if cleaning else f"{fastq_dir}{{samples}}_R1{rattlersnp.fastq_files_ext}",
-            R2 = rules.run_atropos.output.R2 if cleaning else f"{fastq_dir}{{samples}}_R2{rattlersnp.fastq_files_ext}"
+            R1 = rules.run_atropos.output.R1 if cleaning else f"{fastq_dir}{{samples}}_R1{rattlesnp.fastq_files_ext}",
+            R2 = rules.run_atropos.output.R2 if cleaning else f"{fastq_dir}{{samples}}_R2{rattlesnp.fastq_files_ext}"
     output:
-            R1 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R1{rattlersnp.cleaning_tool}_fastqc.html",
-            R2 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R2{rattlersnp.cleaning_tool}_fastqc.html"
+            R1 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R1{rattlesnp.cleaning_tool}_fastqc.html",
+            R2 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R2{rattlesnp.cleaning_tool}_fastqc.html"
     params:
             outdir = directory(f"{out_dir}0_cleaning/FASTQC/"),
             other_options = config["PARAMS_TOOLS"]["FASTQC"]
@@ -449,9 +449,9 @@ rule samtools_index:
     """index bam for use stats"""
     threads: get_threads('samtools_index', 1)
     input:
-            bam = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam"
+            bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
     output:
-            bai = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/{{samples}}.bam.bai"
+            bai = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai"
     log:
             error =  f'{log_dir}samtools_index/{{samples}}.e',
             output = f'{log_dir}samtools_index/{{samples}}.o'
@@ -511,7 +511,7 @@ rule merge_idxstats:
     """merge all samtools idxstats files"""
     threads : get_threads('merge_idxstats', 1)
     input :
-            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlersnp.samples),
+            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlesnp.samples),
     output :
             csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_resume.csv", category="Resume mapping infos")
     log:
@@ -595,7 +595,7 @@ rule merge_bam_stats:
     """merge all bam_stats_to_csv files"""
     threads : get_threads('merge_bam_stats', 1)
     input :
-            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlersnp.samples),
+            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlesnp.samples),
     output :
             csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping infos")
     log:
@@ -649,10 +649,10 @@ rule picardTools_mark_duplicates:
     """apply picardTools_mark_duplicates on all bam"""
     threads: get_threads('picardTools_mark_duplicates', 1)
     input:
-            bam_file = rules.samtools_index.input.bam if rattlersnp.mapping_tool_activated else f"{rattlersnp.bam_path}{{samples}}.bam"
+            bam_file = rules.samtools_index.input.bam if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam"
     output:
-            bam_file = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
-            txt_file = f"{out_dir}1_mapping/{rattlersnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
+            bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
+            txt_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
 
     params:
             other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARK_DUPLICATES"]
@@ -792,7 +792,7 @@ def get_gvcf_list(list):
 rule gatk_GenomicsDBImport:
     """apply GenomicsDBImport on all gvcf by chromosomes """
     threads: get_threads('gatk_GenomicsDBImport', 1)
-    input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlersnp.samples , chromosomes = "{chromosomes}"),
+    input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict,
     output:
@@ -800,7 +800,7 @@ rule gatk_GenomicsDBImport:
     params:
             java_mem="20g",                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
-            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlersnp.samples , chromosomes = "{chromosomes}")),
+            str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}")),
             other_options = config["PARAMS_TOOLS"]["GATK_GENOMICSDBIMPORT"]
     log:
             error =  f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.e',

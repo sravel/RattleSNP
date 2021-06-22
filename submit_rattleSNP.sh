@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name rattlerSNP
+#SBATCH --job-name rattleSNP
 #SBATCH --output slurm-%x_%j.log
 #SBATCH --error slurm-%x_%j.log
 #SBATCH --partition=long
@@ -20,8 +20,8 @@ function help
 
  Usage: ./submit_rattleSNP.sh -c {file} -k {file}
     options:
-        -c {file} = Configuration file for run rattlerSNP
-        -k {file} = Configuration file cluster for run rattlerSNP
+        -c {file} = Configuration file for run rattleSNP
+        -k {file} = Configuration file cluster for run rattleSNP
 
         -h = see help\n\n"
     exit 0

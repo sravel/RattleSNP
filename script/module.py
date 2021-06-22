@@ -35,29 +35,29 @@ AVAIL_MAPPING = ("BWA_MEM", "BWA_SAMPE")
 
 ################################################
 # GLOBAL functions
-def get_last_version(version_RattlerSNP):
-    """Function for know the last version of RattlerSNP in website
+def get_last_version(version_RattleSNP):
+    """Function for know the last version of RattleSNP in website
     Arguments:
-        version_RattlerSNP (str): the actual version of RattlerSNP
+        version_RattleSNP (str): the actual version of RattleSNP
     Returns:
         note: message if new version avail on the website
     Examples:
         >>> mess = get_last_version("1.2.0")
         >>> print(mess)
-            Documentation avail at: https://RattlerSNP.readthedocs.io/en/latest
-            NOTE: The Latest version of RattlerSNP 1.3.0 is available at https://github.com/sravel/RattlerSNP/releases
+            Documentation avail at: https://RattleSNP.readthedocs.io/en/latest
+            NOTE: The Latest version of RattleSNP 1.3.0 is available at https://github.com/sravel/RattleSNP/releases
     """
     try:
         from urllib.request import urlopen
         from re import search
-        HTML = urlopen("https://github.com/sravel/RattlerSNP/tags").read().decode('utf-8')
+        HTML = urlopen("https://github.com/sravel/RattleSNP/tags").read().decode('utf-8')
         lastRelease = \
-        search('/sravel/RattlerSNP/releases/tag/.*', HTML).group(0).split("/")[-1].split('"')[0]
+        search('/sravel/RattleSNP/releases/tag/.*', HTML).group(0).split("/")[-1].split('"')[0]
         epilogTools = """Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ \n"""
-        if version_RattlerSNP != lastRelease:
-            if lastRelease < version_RattlerSNP:
+        if version_RattleSNP != lastRelease:
+            if lastRelease < version_RattleSNP:
                 epilogTools += "\n** NOTE: This RattleSNP version is higher than the production version, you are using a dev version\n"
-            elif lastRelease > version_RattlerSNP:
+            elif lastRelease > version_RattleSNP:
                 epilogTools += f"\nNOTE: The Latest version of RattleSNP {lastRelease} is available at https://github.com/sravel/RattleSNP/releases\n"
         return epilogTools
     except Exception as e:
@@ -68,7 +68,7 @@ def get_last_version(version_RattlerSNP):
 def get_version(RATTLESNP):
     """Read VERSION file to know current version
     Arguments:
-        RATTLESNP (path): Path to RattlerSNP install
+        RATTLESNP (path): Path to RattleSNP install
     Returns:
         version: actual version read on the VERSION file
     Examples:
@@ -106,7 +106,7 @@ def get_files_ext(path, extensions, add_ext=True):
             [".fastq"]
      """
     if not (extensions, (list, tuple)) or not extensions:
-        raise ValueError(f'ERROR RattlerSNP: "extensions" must be a list or tuple not "{type(extensions)}"\n')
+        raise ValueError(f'ERROR RattleSNP: "extensions" must be a list or tuple not "{type(extensions)}"\n')
     tmp_all_files = []
     all_files = []
     files_ext = []
@@ -276,7 +276,7 @@ class RattleSNP(object):
                     tools_activate.append(tool)
                     self.config[key][tool] = boolean_activated
             else:
-                raise ValueError(f'CONFIG FILE CHECKING FAIL for key "{key}": {tool} not avail on RattlerSNP\n')
+                raise ValueError(f'CONFIG FILE CHECKING FAIL for key "{key}": {tool} not avail on RattleSNP\n')
         if len(tools_activate) == 0 and mandatory:
             raise ValueError(f"CONFIG FILE CHECKING FAIL : you need to set True for at least one {key} from {allow}\n")
         return tools_activate
@@ -300,7 +300,7 @@ class RattleSNP(object):
             self.mapping_stats_activated = self.__var_2_bool(tool="MAPPING", key="BUILD_STATS", to_convert=self.get_config_value(section="MAPPING", key="BUILD_STATS"))
             self.mapping_tool_activated = self.get_config_value(section="MAPPING", key="TOOL")
             if self.mapping_tool_activated not in AVAIL_MAPPING:
-                raise ValueError(f'CONFIG FILE CHECKING FAIL for section "MAPPING" key "TOOL": {self.mapping_tool_activated} not avail on RattlerSNP\n')
+                raise ValueError(f'CONFIG FILE CHECKING FAIL for section "MAPPING" key "TOOL": {self.mapping_tool_activated} not avail on RattleSNP\n')
 
         # if cleaning or mapping check fastq path and
         if self.cleaning_activated or self.mapping_activated:
