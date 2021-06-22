@@ -12,23 +12,23 @@ import pandas as pd
 
 # load own functions
 from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-from script.module import RattlerSNP, get_last_version, get_version, get_list_chromosome_names
+from script.module import RattleSNP, get_last_version, get_version, get_list_chromosome_names
 
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
 
 # recovery basedir where RattlerSNP was installed
 basedir = workflow.basedir
-RATTLERSNP_PATH = Path(basedir)
+RATTLESNP_PATH = Path(basedir)
 
-logo = RATTLERSNP_PATH.joinpath('SupplementaryFiles/RattlerSNP_logo.png').as_posix()
+logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
 
-version_RattlerSNP = get_version(basedir)
+version_RattleSNP = get_version(basedir)
 
 logger.info("""
-    Welcome to RattlerSNP  !
+    Welcome to RattleSNP  !
     Created on November 2019
-    version: """+version_RattlerSNP+"""
+    version: """+version_RattleSNP+"""
     @author: Sebastien Ravel (CIRAD)
     @email: sebastien.ravel@cirad.fr
 
@@ -36,24 +36,24 @@ logger.info("""
     #              _....---;:'::' ^__/
     #            .' `'`___....---=-'`
     #           /::' (`
-    #           \\'   `:.                   `OooOOo.                    o              .oOOOo.  o.     O OooOOo.  
-    #            `\::.  ';-"":::-._  {}      o     `o                  O               o     o  Oo     o O     `O 
-    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o               O.       O O    O o      O 
-    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O                `OOoo.  O  o   o O     .o 
-    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo. `OoOo.       `O O   o  O oOooOO' 
-    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'  o            o o    O O o   
-    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O     O.    .O o     Oo O  
-    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'  o      `oooO'  O     `o o' 
+    #           \\'   `:.                   `OooOOo.                    o        .oOOOo.  o.     O OooOOo.  
+    #            `\::.  ';-"":::-._  {}      o     `o                  O         o     o  Oo     o O     `O 
+    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o         O.       O O    O o      O 
+    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O          `OOoo.  O  o   o O     .o 
+    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo.        `O O   o  O oOooOO' 
+    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'         o o    O O o   
+    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O.    .O o     Oo O  
+    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'   `oooO'  O     `o o' 
     #     '--.:::...---'\:'.:`':`':./       
     #                    '-::..:::-'
 
-    Please cite our github https://github.com/sravel/RattlerSNP
+    Please cite our github https://github.com/sravel/RattleSNP
     Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
     and GPLv3 Intellectual property belongs to CIRAD and authors.
-    """+get_last_version(version_RattlerSNP))
+    """+get_last_version(version_RattleSNP))
 
 if not workflow.overwrite_configfiles:
-    raise ValueError("ERROR RattlerSNP: You need to use --configfile option to snakemake command line")
+    raise ValueError("ERROR RattleSNP: You need to use --configfile option to snakemake command line")
 else:
     path_config = workflow.overwrite_configfiles[0]
 
@@ -62,14 +62,14 @@ else:
 # print("\n".join(list(workflow.__dict__.keys())))
 
 # cluster_config: workflow.overwrite_clusterconfig
-tools_config  = load_configfile(RATTLERSNP_PATH.joinpath("tools_path.yaml"))
+tools_config  = load_configfile(RATTLESNP_PATH.joinpath("tools_path.yaml"))
 
 
 
 # --- Verification Configuration Files --- #
 # using schemas to check mandatory value from yaml format
 # print(config)
-rattlersnp = RattlerSNP(config, path_config, tools_config, RATTLERSNP_PATH)
+rattlersnp = RattleSNP(config, path_config, tools_config, RATTLESNP_PATH)
 # print(rattlersnp.export_use_yaml)
 
 # print(pp.pprint(workflow.__dict__))

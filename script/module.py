@@ -53,30 +53,30 @@ def get_last_version(version_RattlerSNP):
         HTML = urlopen("https://github.com/sravel/RattlerSNP/tags").read().decode('utf-8')
         lastRelease = \
         search('/sravel/RattlerSNP/releases/tag/.*', HTML).group(0).split("/")[-1].split('"')[0]
-        epilogTools = """Documentation avail at: https://RattlerSNP.readthedocs.io/en/latest/ \n"""
+        epilogTools = """Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ \n"""
         if version_RattlerSNP != lastRelease:
             if lastRelease < version_RattlerSNP:
-                epilogTools += "\n** NOTE: This RattlerSNP version is higher than the production version, you are using a dev version\n"
+                epilogTools += "\n** NOTE: This RattleSNP version is higher than the production version, you are using a dev version\n"
             elif lastRelease > version_RattlerSNP:
-                epilogTools += f"\nNOTE: The Latest version of RattlerSNP {lastRelease} is available at https://github.com/sravel/RattlerSNP/releases\n"
+                epilogTools += f"\nNOTE: The Latest version of RattleSNP {lastRelease} is available at https://github.com/sravel/RattleSNP/releases\n"
         return epilogTools
     except Exception as e:
         epilogTools = f"\n** ENABLE TO GET LAST VERSION, check internet connection\n{e}\n"
         return epilogTools
 
 
-def get_version(RATTLERSNP):
+def get_version(RATTLESNP):
     """Read VERSION file to know current version
     Arguments:
-        RATTLERSNP (path): Path to RattlerSNP install
+        RATTLESNP (path): Path to RattlerSNP install
     Returns:
         version: actual version read on the VERSION file
     Examples:
-        >>> version = get_version("/path/to/install/RattlerSNP")
+        >>> version = get_version("/path/to/install/RattleSNP")
         >>> print(version)
             1.3.0
     """
-    with open(Path(RATTLERSNP).joinpath("VERSION"), 'r') as version_file:
+    with open(Path(RATTLESNP).joinpath("VERSION"), 'r') as version_file:
         return version_file.readline().strip()
 
 
@@ -131,12 +131,12 @@ def get_files_ext(path, extensions, add_ext=True):
 # GLOBAL Class
 
 
-class RattlerSNP(object):
+class RattleSNP(object):
     """
     to read file config
     """
 
-    def __init__(self, config=None, path_config=None, tools_config=None, rattlerSNP_path=None):
+    def __init__(self, config=None, path_config=None, tools_config=None, rattleSNP_path=None):
         self.config = config
         self.tools_config = tools_config
 
