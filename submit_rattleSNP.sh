@@ -5,7 +5,7 @@
 #SBATCH --partition=long
 
 profile=$HOME"/.config/snakemake/RattleSNP"
-
+echo $profile
 # module help
 function help
 {
@@ -27,21 +27,23 @@ function help
     exit 0
 }
 
+dag=false
 
 ##################################################
 ## Parse command line options.
-while getopts c:k:h: OPT;
-    do case $OPT in
+while getopts :c:k:d:h: opt;
+    do case $opt in
         c)    config=$OPTARG;;
         k)    cluster_config=$OPTARG;;
+        d)    dag=true;;
         h)    help;;
         \?)    help;;
     esac
 done
 
-if [ $# -eq 0 ]; then
-    help
-fi
+#if [ $# -eq 0 ]; then
+#    help
+#fi
 
 ##################################################
 ## Main code
@@ -51,21 +53,29 @@ if [ ! -z "$config" ] && [ -e $config ]; then
 
     config=`readlink -m $config`
     echo "CONFIG FILE IS $config"
-    # SLURM JOBS PROFILES
-    if [ ! -z "$cluster_config" ] && [ -e $cluster_config ]; then
+
+    if [ $dag == "true" ]; then
+        snakemake -p -s $RATTLESNP/Snakefile \
+        --configfile $config \
+        --cluster-config $profile"/cluster_config.yaml" \
+        --profile $profile --dag | dot -Tpdf > schema_pipeline_global.pdf
+
+    elif [ ! -z "$cluster_config" ] && [ -e $cluster_config ]; then
         cluster_config=`readlink -m $cluster_config`
         echo "CLUSTER CONFIG FILE IS $cluster_config"
-        snakemake --cores -p -s $RATTLESNP/Snakefile \
+        snakemake -p -s $RATTLESNP/Snakefile \
         --configfile $config \
         --cluster-config $cluster_config \
         --profile $profile
     else
-        snakemake --cores -p -s $RATTLESNP/Snakefile \
+        snakemake -p -s $RATTLESNP/Snakefile \
         --configfile $config \
         --cluster-config $profile"/cluster_config.yaml" \
         --profile $profile
 
     fi
+
+
 else
     echo "configfile = "$config
     echo "profile = "$profile
