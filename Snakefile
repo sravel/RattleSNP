@@ -36,15 +36,15 @@ logger.info("""
     #              _....---;:'::' ^__/
     #            .' `'`___....---=-'`
     #           /::' (`
-    #           \\'   `:.                   `OooOOo.                    o        .oOOOo.  o.     O OooOOo.  
-    #            `\::.  ';-"":::-._  {}      o     `o                  O         o     o  Oo     o O     `O 
-    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o         O.       O O    O o      O 
-    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O          `OOoo.  O  o   o O     .o 
-    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo.        `O O   o  O oOooOO' 
-    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'         o o    O O o   
-    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O.    .O o     Oo O  
-    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'   `oooO'  O     `o o' 
-    #     '--.:::...---'\:'.:`':`':./       
+    #           \\'   `:.                   `OooOOo.                    o        .oOOOo.  o.     O OooOOo.
+    #            `\::.  ';-"":::-._  {}      o     `o                  O         o     o  Oo     o O     `O
+    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o         O.       O O    O o      O
+    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O          `OOoo.  O  o   o O     .o
+    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo.        `O O   o  O oOooOO'
+    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'         o o    O O o
+    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O.    .O o     Oo O
+    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'   `oooO'  O     `o o'
+    #     '--.:::...---'\:'.:`':`':./
     #                    '-::..:::-'
 
     Please cite our github https://github.com/sravel/RattleSNP
@@ -78,7 +78,7 @@ rattlesnp = RattleSNP(config, path_config, tools_config, RATTLESNP_PATH)
 
 # print for debug:
 # logger.debug(print(rattlesnp))
-
+# exit()
 
 ###############################################################################
 # dir and suffix
@@ -197,8 +197,8 @@ def output_final(wildcars):
                 })
     if rattlesnp.calling_activated:
         dico_final.update({
-                    "vcf_file": f'{out_dir}3_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
-                    "report": f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
+                    "vcf_file": f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
+                    "reportvcf": f"{out_dir}3_full_snp_calling_stats/report_vcf.html",
                 })
     # pp.pprint(dico_final)
     return dico_final
@@ -676,7 +676,7 @@ rule picardTools_mark_duplicates:
         tools_config["MODULES"]["PICARDTOOLS"]
     shell:
         """
-            java -jar $PICARDPATH/picard.jar MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
+            picard MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
         """
 
 
@@ -937,13 +937,13 @@ rule vcf_stats:
         tools_config["MODULES"]["SAMTOOLS"]
     shell:
         """
-            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --freq2 --max-alleles 3 --stdout 1> {output.freq}
+            (vcftools --gzvcf {input.vcf_file_all}  --remove-indels --freq2 --max-alleles 3 --stdout 1> {output.freq}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --depth --stdout 1> {output.depth}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-mean-depth --stdout 1> {output.depth_mean}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-quality --stdout 1> {output.qual}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-indv --stdout 1> {output.missing_ind}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}
-            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV> remove-indv_75perc
+            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV > remove-indv_75perc) 2>>{log.error}
         """
 
 rule report_vcf:
