@@ -533,37 +533,37 @@ rule merge_idxstats:
         parse_idxstats(input.csv_resume, output.csv_resume_merge, sep="\t")
 
 ########################## STATS BAM
-# rule samtools_depth:
-#     """apply samtools depth on all bam SE end PE"""
-#     threads: get_threads('samtools_depth', 1)
-#     input:
-#             bam = rules.samtools_index.input.bam,
-#             bai = rules.samtools_index.output.bai
-#     output:
-#             txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
-#     params:
-#             other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
-#     log:
-#             error =  f'{log_dir}samtools_depth/{{samples}}.e',
-#             output = f'{log_dir}samtools_depth/{{samples}}.o'
-#     message:
-#             f"""
-#             Execute {{rule}} for
-#                 Input:
-#                     - Bam : {{input.bam}}
-#                 Output:
-#                     - txt : {{output.txt_file}}
-#                 Others
-#                     - Threads : {{threads}}
-#                     - LOG error: {{log.error}}
-#                     - LOG output: {{log.output}}
-#             """
-#     envmodules:
-#         tools_config["MODULES"]["SAMTOOLS"]
-#     shell:
-#             """
-#                 samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
-#             """
+rule samtools_depth:
+    """apply samtools depth on all bam SE end PE"""
+    threads: get_threads('samtools_depth', 1)
+    input:
+            bam = rules.samtools_index.input.bam,
+            bai = rules.samtools_index.output.bai
+    output:
+            txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
+    params:
+            other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
+    log:
+            error =  f'{log_dir}samtools_depth/{{samples}}.e',
+            output = f'{log_dir}samtools_depth/{{samples}}.o'
+    message:
+            f"""
+            Execute {{rule}} for
+                Input:
+                    - Bam : {{input.bam}}
+                Output:
+                    - txt : {{output.txt_file}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+            """
+                samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+            """
 
 rule bam_stats_to_csv:
     """build csv with mean depth, median depth and mean coverage for all bam"""
@@ -912,6 +912,7 @@ rule vcf_stats:
             qual = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.lqual',
             missing_ind = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.imiss',
             miss = f'{out_dir}3_full_snp_calling_stats/All_samples_GenotypeGVCFs.lmiss',
+            dirout = directory(f'{out_dir}3_full_snp_calling_stats/')
     log:
             error =  f'{log_dir}vcf_stats/vcftools.e',
             output = f'{log_dir}vcf_stats/vcftools.o'
@@ -943,7 +944,7 @@ rule vcf_stats:
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-quality --stdout 1> {output.qual}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-indv --stdout 1> {output.missing_ind}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}
-            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV > remove-indv_75perc) 2>>{log.error}
+            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV > {output.dirout}remove-indv_75perc) 2>>{log.error}
         """
 
 rule report_vcf:

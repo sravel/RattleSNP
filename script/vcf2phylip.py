@@ -4,7 +4,7 @@
 
 
 '''
-The script converts a collection of SNPs in VCF format into a PHYLIP, FASTA, 
+The script converts a collection of SNPs in VCF format into a PHYLIP, FASTA,
 NEXUS, or binary NEXUS file for phylogenetic analysis. The code is optimized
 to process VCF files with sizes >1GB. For small VCF files the algorithm slows
 down as the number of taxa increases (but is still fast).
@@ -110,7 +110,7 @@ def main():
 	gt_idx = []
 	missing = ""
 
-	with opener(filename) as vcf:
+	with opener(filename,"rt") as vcf:
 
 		# Create a list to store sample names
 		sample_names = []
@@ -149,7 +149,7 @@ def main():
 							# print gt_idx
 							# print ploidy
 							break
-				
+
 	vcf.close()
 
 	print("\nConverting file " + filename + ":\n")
@@ -157,18 +157,18 @@ def main():
 
 
 	####################
-	# SETUP OUTPUT FILES 
+	# SETUP OUTPUT FILES
 	# Output filename will be the same as input file, indicating the minimum of samples specified
 	if filename.endswith(".gz"):
 		outfile = filename.replace(".vcf.gz",".min"+str(min_samples_locus))
 	else:
 		outfile = filename.replace(".vcf",".min"+str(min_samples_locus))
 
-	# We need to create an intermediate file to hold the sequence data 
+	# We need to create an intermediate file to hold the sequence data
 	# vertically and then transpose it to create the matrices
 	if fasta or nexus or not phylipdisable:
 		temporal = open(outfile+".tmp", "w")
-	
+
 	# if binary NEXUS is selected also create a separate temporal
 	if nexusbin:
 		if ploidy == 2:
@@ -184,7 +184,7 @@ def main():
 	index_last_sample = len(sample_names)+9
 
 	# Start processing SNPs of VCF file
-	with opener(filename) as vcf:
+	with opener(filename,"rt") as vcf:
 
 		# Initialize line counter
 		snp_num = 0
@@ -218,7 +218,7 @@ def main():
 
 					# Check if the SNP has the minimum of samples required
 					if (len(broken[9:]) - ''.join(broken[9:]).count(missing)) >= min_samples_locus:
-						
+
 						# Check that ref genotype is a single nucleotide and alternative genotypes are single nucleotides
 						if len(broken[3]) == 1 and (len(broken[4])-broken[4].count(",")) == (broken[4].count(",")+1):
 
@@ -250,7 +250,7 @@ def main():
 
 								# Check taht the SNP only has two alleles
 								if len(broken[4]) == 1:
-									
+
 									# Add to running sum of biallelic SNPs
 									snp_biallelic += 1
 
@@ -274,7 +274,7 @@ def main():
 		print("Total of genotypes processed: " + str(snp_num))
 		print("Genotypes excluded because they exceeded the amount of missing data allowed: " + str(snp_shallow))
 		print("Genotypes that passed missing data filter but were excluded for not being SNPs: " + str(snp_multinuc))
-		print("SNPs that passed the filters: " + str(snp_accepted)) 
+		print("SNPs that passed the filters: " + str(snp_accepted))
 		if nexusbin:
 			print("Biallelic SNPs selected for binary NEXUS: " + str(snp_biallelic))
 		print("")
@@ -327,7 +327,7 @@ def main():
 				# Write FASTA line
 				if fasta:
 					output_fas.write(">"+sample_names[idx_outgroup]+"\n"+seqout+"\n")
-				
+
 				# Pad sequences names and write PHYLIP or NEXUS lines
 				padding = (len_longest_name + 3 - len(sample_names[idx_outgroup])) * " "
 				if not phylipdisable:
@@ -368,7 +368,7 @@ def main():
 					# Write FASTA line
 					if fasta:
 						output_fas.write(">"+sample_names[s]+"\n"+seqout+"\n")
-					
+
 					# Pad sequences names and write PHYLIP or NEXUS lines
 					padding = (len_longest_name + 3 - len(sample_names[s])) * " "
 					if not phylipdisable:
