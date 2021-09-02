@@ -570,7 +570,8 @@ rule bam_stats_to_csv:
     threads : get_threads('bam_stats_to_csv', 1)
     input :
             bam = rules.samtools_index.input.bam,
-            bai = rules.samtools_index.output.bai
+            bai = rules.samtools_index.output.bai,
+            txt = rules.samtools_depth.output.txt_file
     output :
             csv_resume = temp(f'{out_dir}1_mapping/STATS/depth/{{samples}}.csv')
     log:

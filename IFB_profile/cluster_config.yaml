@@ -4,7 +4,7 @@ __default__:
     mem-per-cpu : 4G
     partition : fast
     output : 'logs/stdout/{rule}/log_toto.o'
-    error : 'logs/error/{rule}/log_toto.e'
+    error : 'logs/error/{rule}/log_{wildcards}.e'
     job-name : 'JOBNAME.{rule}.{wildcards}'
 
 bwa_index:
@@ -90,10 +90,10 @@ create_sequence_dict:
 bcftools_concat:
     cpus-per-task : 10
     partition : "fast"
-    
+
 vcftools_filter:
     cpus-per-task : 10
     partition : "fast"
-    
-    
-    
+
+
+
