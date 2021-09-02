@@ -4,8 +4,9 @@
 #SBATCH --error slurm-%x_%j.log
 #SBATCH --partition=long
 
-profile=$HOME"/.config/snakemake/RattleSNP"
+profile=$RATTLESNP"/IFB_profile/"
 echo $profile
+
 # module help
 function help
 {
