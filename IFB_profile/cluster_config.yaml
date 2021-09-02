@@ -3,9 +3,9 @@ __default__:
     ntasks : 1
     mem-per-cpu : 4G
     partition : fast
-    output : 'logs/stdout/{rule}/log_toto.o'
-    error : 'logs/error/{rule}/log_{wildcards}.e'
-    job-name : 'JOBNAME.{rule}.{wildcards}'
+    output : 'logs/stdout/{rule}/{wildcards}.o'
+    error : 'logs/error/{rule}/{wildcards}.e'
+    job-name : 'JOB.{rule}.{wildcards}'
 
 bwa_index:
     cpus-per-task : 1
@@ -63,26 +63,22 @@ picardTools_mark_duplicates:
     partition : "long"
 
 gatk_HaplotypeCaller:
-    javaMem: "20g"
     cpus-per-task : 4
     mem-per-cpu : 20G
     partition : "long"
 
 gatk_GenomicsDBImport:
-    javaMem: "20g"
     cpus-per-task : 1
     mem-per-cpu : 20G
     partition : "long"
 
 
 gatk_GenotypeGVCFs_merge:
-    javaMem: "30g"
     cpus-per-task : 1
     mem-per-cpu : 30G
     partition : "long"
 
 create_sequence_dict:
-    javaMem: "10g"
     cpus-per-task : 1
     mem-per-cpu : 10G
     partition : "fast"
@@ -90,10 +86,10 @@ create_sequence_dict:
 bcftools_concat:
     cpus-per-task : 10
     partition : "fast"
-
+    
 vcftools_filter:
     cpus-per-task : 10
     partition : "fast"
-
-
-
+    
+    
+    
