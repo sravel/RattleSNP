@@ -3,9 +3,9 @@ __default__:
     ntasks : 1
     mem-per-cpu : 4G
     partition : fast
-    output : 'logs/stdout/{rule}/{wildcards}.o'
-    error : 'logs/error/{rule}/{wildcards}.e'
-    job-name : 'JOB.{rule}.{wildcards}'
+    output : 'slurm_logs/stdout/{rule}/{wildcards}.o'
+    error : 'slurm_logs/error/{rule}/{wildcards}.e'
+    job-name : '{rule}.{wildcards}'
 
 bwa_index:
     cpus-per-task : 1
@@ -86,10 +86,19 @@ create_sequence_dict:
 bcftools_concat:
     cpus-per-task : 10
     partition : "fast"
-    
+
 vcftools_filter:
     cpus-per-task : 10
     partition : "fast"
-    
-    
-    
+
+report:
+    output : 'slurm_logs/stdout/{rule}/run_report.o'
+    error : 'slurm_logs/error/{rule}/run_report.e'
+    job-name : '{rule}'
+
+report_vcf:
+    output : 'slurm_logs/stdout/{rule}/run_report_vcf.o'
+    error : 'slurm_logs/error/{rule}/run_report_vcf.e'
+    job-name : '{rule}'
+
+

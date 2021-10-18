@@ -629,6 +629,8 @@ rule report:
     log:
             error =  f'{log_dir}report/report.e',
             output = f'{log_dir}report/report.o'
+    # envmodules:
+        # tools_config["MODULES"]["R"]
     message:
             f"""
             Launching {{rule}}
@@ -962,6 +964,8 @@ rule report_vcf:
     log:
             error =  f'{log_dir}report_vcf/report.e',
             output = f'{log_dir}report_vcf/report.o'
+    # envmodules:
+        # tools_config["MODULES"]["R"]
     message:
             f"""
             Execute {{rule}} for

@@ -12,4 +12,4 @@ MODULES:
     "GATK4": "gatk4/4.2.0.0"                     # for control quality
     "BCFTOOLS": "bcftools/1.10.2"                  # for contact vcf
     "VCFTOOLS": "vcftools/0.1.16"    # for filter vcf
-
+    "R": "r/4.1.0"
