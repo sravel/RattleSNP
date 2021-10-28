@@ -16,11 +16,22 @@ output:
 ---
 <style>
 #sidebar h2 {
-	background-color: #2980B9;
+    background-color: #2980B9;
 }
 h1,h2,h3,h4,h5,h6,legend{
 color: #2980B9;
 }
+#main :not(.leaflet-control) > a {
+    background-image: linear-gradient(180deg,#A9EAFE,#A9EAFE);
+    color: #2980B9;
+}
+.pagination > .active > a, .pagination > .active > a:focus, .pagination > .active > a:hover, .pagination > .active > span, .pagination > .active > span:focus, .pagination > .active > span:hover {
+    background-color: #A9EAFE;
+    border-color: #A9EAFE;
+}
+.footer{
+    position:absolute; top:0; right:20px; padding:30px; height:180px
+    }
 </style>
 ```{r load package, include=FALSE, echo= FALSE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
@@ -31,21 +42,13 @@ suppressMessages(library('rmdformats', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('DT', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('htmltools', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('htmlwidgets', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('gridExtra', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
-#suppressMessages(library('tidyverse', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('magrittr', warn.conflict = FALSE, quietly = TRUE))
-suppressMessages(library('stringr', warn.conflict = FALSE, quietly = TRUE))
 
-#setwd("~/work/elisabeth/hilaire/GBS-2020-bipolaris/workflow-bipolaris/5_snp_calling_final")
-
-basename <- tools::file_path_sans_ext(snakemake@input$freq)
+#basename <- tools::file_path_sans_ext(snakemake@input$freq)
+basename <- "All_samples_GenotypeGVCFs"
 ```
 
-This is th summary report for vcf: `r paste0(basename, ".vcf.gz")`
+This is the summary report for vcf: `r paste0(basename, ".vcf.gz")`
 
 # Variant based statistics
 
@@ -65,7 +68,7 @@ ggplotly(a)
 ```
 
 ```{r Variant quality summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
-DT::datatable(t(as.data.frame(sapply(var_qual[, c("qual")], summary))),
+DT::datatable(t(as.data.frame(sapply(var_qual[, "qual"], summary))),
               class = 'table-condensed ',
               option = list(autoWidth = TRUE, dom = 'rt')
               )
@@ -92,7 +95,7 @@ ggplotly(a)
 This plot is a bit misleading because clearly, there are very few variants with extremely high coverage indeed. Let’s take a closer at the mean depth:
 
 ```{r Variant summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
-DT::datatable(t(as.data.frame(sapply(var_depth[, c("mean_depth")], summary))),
+DT::datatable(t(as.data.frame(sapply(var_depth[, "mean_depth"], summary))),
               class = 'table-condensed ',
               option = list(autoWidth = TRUE, dom = 'rt')
               )
@@ -118,7 +121,7 @@ ggplotly(a)
 ```
 
 ```{r Variant missing max summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
-DT::datatable(t(as.data.frame(sapply(var_miss[, c("fmiss")], summary))),
+DT::datatable(t(as.data.frame(sapply(var_miss[, "fmiss"], summary))),
               class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
 ```
 
@@ -143,7 +146,7 @@ ggplotly(a)
 The distribution might look a little odd - this is partly because of the low number of individuals we have in the dataset (16), meaning there are only certain frequencies possible. Nonetheless, it is clear that a large number of variants have low frequency alleles. We can also look at the distribution in more detail:
 
 ```{r Minor allele frequency summary, echo=FALSE, message=TRUE, warning=FALSE, include=TRUE}
-DT::datatable(t(as.data.frame(sapply(var_freq[, c("maf")], summary))),
+DT::datatable(t(as.data.frame(sapply(var_freq[, "maf"], summary))),
               class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
 ```
 
@@ -173,7 +176,7 @@ ind_depth <- read_delim(paste0(basename, ".idepth"), delim = "\t",
 a <- ggplot(ind_depth, aes(depth)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.1)+ theme_light()
 ggplotly(a)
 
-DT::datatable(t(as.data.frame(sapply(ind_depth[, c("depth")], summary))),
+DT::datatable(t(as.data.frame(sapply(ind_depth[, "depth"], summary))),
               class = 'table-condensed ',               option = list(autoWidth = TRUE, dom = 'rt')               )
 
 DT::datatable(ind_depth, caption =" Table n°1: Depth per individual",
@@ -205,7 +208,7 @@ ind_miss  <- read_delim(paste0(basename, ".imiss"), delim = "\t",
 a <- ggplot(ind_miss, aes(fmiss)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.01)+ theme_light()
 ggplotly(a)
 
-DT::datatable(t(as.data.frame(sapply(ind_miss[, c("fmiss")], summary))),
+DT::datatable(t(as.data.frame(sapply(ind_miss[, "fmiss"], summary))),
               class = 'table-condensed ',
               option = list(autoWidth = TRUE, dom = 'rt')
               )
@@ -228,5 +231,7 @@ DT::datatable(ind_miss, caption =" Table n°2: Proportion of missing data per in
 Again this shows us, the proportion of missing data per individual is very high indeed. It ranges from **`r min(ind_miss$fmiss)`-`r max(ind_miss$fmiss)`**, so remove individuals with more than 0.75% of missing data
 
 
-
-
+<footer>
+        <p style="text-align: center;">Snakemake report of workflow <a target="_blank" href="https://github.com/sravel/RattleSNP">RattleSNP</a> created by <a target="_blank" href="https://github.com/sravel">Sébastien RAVEL</a></p>
+        <p style="text-align: center;"><a target="_blank" href = "mailto:sebastien.ravel@cirad.fr"><span style="color: #808080;"><em>sebastien.ravel@cirad.fr</em></span></a></p>
+</footer>

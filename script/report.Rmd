@@ -1,99 +1,80 @@
 ---
-title: "Report"
-author:
-    - "Sébastien RAVEL"
+title: "Mapping quality report"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
-params:
-   rmd: "report.Rmd"
 output:
-  html_document:
-    logo: "logo_gallery.png"
-    fig_caption: yes
-    highlight: zenburn
-    theme: cerulean
-    toc: yes
+  rmdformats::readthedown:
+    fig_caption: TRUE
+    lightbox: TRUE
+    gallery: TRUE
+    mathjax: "rmdformats"
+    highlight: pygments
     toc_depth: 5
     toc_float:
       collapsed: false
       smooth_scroll: false
-    number_sections: false
-    includes:
-      #in_header: header.html
-      #before_body: doc_prefix.html
-
 
 ---
+<style>
+#sidebar h2 {
+    background-color: #2980B9;
+}
+h1,h2,h3,h4,h5,h6,legend{
+color: #2980B9;
+}
+#main :not(.leaflet-control) > a {
+    background-image: linear-gradient(180deg,#A9EAFE,#A9EAFE);
+    color: #2980B9;
+}
+.pagination > .active > a, .pagination > .active > a:focus, .pagination > .active > a:hover, .pagination > .active > span, .pagination > .active > span:focus, .pagination > .active > span:hover {
+    background-color: #A9EAFE;
+    border-color: #A9EAFE;
+}
+.footer{
+    position:absolute; top:0; right:20px; padding:30px; height:180px
+    }
+</style>
 
-```{r Package , echo=FALSE}
-# list of packages required
-list.of.packages <- c("knitr", "DT", "ggplot2")
-#checking missing packages from list
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-#install missing ones
-if(length(new.packages)) install.packages(new.packages, dependencies = TRUE)
-library('knitr')
-library('DT')
-library('ggplot2')
-options(DT.options = list(
-                         paging=TRUE, pageLength = 10, searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = FALSE, autoWidth = TRUE,
-                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
-                        dom = 'Blfrtip'
-                    ))
+```{r load package, include=FALSE, echo= FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
+
+suppressMessages(library('knitr', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('plotly', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmdformats', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('DT', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
+suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
 ```
+# Library size / mapped
 
-```{js logo-js, echo=FALSE}
-$(document).ready(function() {
-  $('#header').parent().prepend('<div id=\"logo\"><img src=\"https://avatars3.githubusercontent.com/u/11534773?s=460&v=4\" style=\"position:absolute; top:0; right:20px; padding:30px; height:180px\"></div>');
-  $('#header').css('margin-right', '120px')
-});
-```
+```{r Importation des données, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
-
-```{r knitr setup, include=FALSE,  eval=TRUE, echo=FALSE, warning=FALSE}
-options(width = 600)
-knitr::opts_chunk$set(
-  fig.width = 10,
-  fig.height = 5,
-  fig.align = "center",
-  size = "tiny",
-  echo = TRUE, eval=TRUE, cache=TRUE,
-  warning = FALSE, message = FALSE,
-  results = TRUE, comment = "")
-# knitr::asis_output("\\footnotesize")
-
-```
-
-&nbsp;
-
-# Mapping
-
-## Library size / mapped  {.tabset}
-
-```{r Importation des données, echo=FALSE}
-
-file.quality <- snakemake@input$idxstats_resume
+#file.quality <- snakemake@input$idxstats_resume
+file.quality <- "/media/work/RattleSNP-git/script/all_mapping_stats_resume.csv"
 datatableQ <- read.table(file=file.quality, sep="\t", header=TRUE)
-
-file.quality.depth <- snakemake@input$depth_resume
+#file.quality.depth <- snakemake@input$depth_resume
+file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
 datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
 ```
 
-```{R Visualisation des taille de librairie, echo=FALSE}
-datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
-          colnames = c("Sample",colnames(datatableQ[,2:4])),
-          rownames = NULL,
-          extensions = 'Buttons',
-          style = 'bootstrap', class = 'table table-striped table-bordered table-hover',
-          filter = list(position = 'top', clear = FALSE, plain = TRUE)
-        )
-       #%>%
-      #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
+```{r Visualisation des taille de librairie, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+DT::datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
+              rownames = NULL,
+              colnames = c("Sample",colnames(datatableQ[,2:4])),
+              escape = FALSE,
+              class = 'table table-striped table-bordered table-hover',
+              extensions = 'Buttons',
+              filter = list(position = 'top', clear = FALSE, plain = TRUE),
+              option= list(
+                         paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+                         dom = 'BRSPQlfrtip',
+                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                         )
+              )
 ```
+# Stats mapped reads
 
-
-## Stats mapped reads  {.tabset}
-
-```{R Visualisation des Depth, echo=FALSE}
+```{r Visualisation of Depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
           colnames = colnames(datatableDepth),
           rownames = NULL,
@@ -105,26 +86,7 @@ datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
       #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
 ```
 
-
-
-<style>
-    .tocify-extend-page {
-      height: 0 !important;
-    }
-    div.main-container{
-        max-width: 100%;
-    }
-    div.tocify {
-        top: 20%;
-    }
-.footer{
-    position:absolute; top:0; right:20px; padding:30px; height:180px
-    }
-</style>
 <footer>
-        <!-- Add icon library -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-        <!-- Add font awesome icons -->
-        <p style="text-align: center;">Snakemake report with workflow created by <a target="_blank" href="https://github.com/sravel/" class="fa fa-github"> Sébastien RAVEL</a></p>
+        <p style="text-align: center;">Snakemake report of workflow <a target="_blank" href="https://github.com/sravel/RattleSNP">RattleSNP</a> created by <a target="_blank" href="https://github.com/sravel">Sébastien RAVEL</a></p>
         <p style="text-align: center;"><a target="_blank" href = "mailto:sebastien.ravel@cirad.fr"><span style="color: #808080;"><em>sebastien.ravel@cirad.fr</em></span></a></p>
 </footer>
