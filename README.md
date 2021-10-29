@@ -14,6 +14,9 @@
 
 The Best snakemake mapping pipeline !!!
 
+Need
+
+pip install pysam biopython
 
 
 ## Installation

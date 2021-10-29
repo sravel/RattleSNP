@@ -4,29 +4,28 @@
 ################################
 # Input output data options
 DATA:
-    FASTQ: "/home/ravel/Documents/GBS/datas/fastq/"
-    BAM: "/home/ravel/Documents/GBS/datas/GBS_pyricularia/1_mapping/BWA_MEM/"
-    VCF: ""
-    REFERENCE_FILE: "/home/ravel/Documents/GBS/datas/ref/atcc_44560.fasta"
-    OUTPUT: "/home/ravel/Documents/GBS/datas/GBS_pyricularia/"
+    FASTQ: ""
+    BAM: ""
+    VCF: "/home/sravel/Documents/GIT/RattlerSNP/testData/2_snp_calling/All_samples.vcf.gz"
+    REFERENCE_FILE: "ref.fasta"
+    OUTPUT: "/home/sravel/Documents/GIT/RattlerSNP/testData"
 
 PARAMS:
     MITOCHONDRIAL_NAME : ""
-    # boolean, add stats mapping report if True
-    FILTER_SUFFIX: "_Q30-DP10-MAF01"
+    # The filter suffix to add on vcf filter in order to allow multiple filter
+    FILTER_SUFFIX: "-Q30-DP5-MAF005-MISS07"
 
 ################################
 # Pipeline tools activation
-# SplitChrom: True
-# size: 20000
-FASTQC: False
+FASTQC: false
 CLEANING:
-    ATROPOS: False
+    ATROPOS: false
 MAPPING:
-    ACTIVATE: False
+    ACTIVATE: false
     TOOL: "BWA_MEM"         # Use BWA_MEM or BWA_SAMPE only
-    BUILD_STATS: False
-SNPCALLING: True
+    BUILD_STATS: false
+SNPCALLING: false
+FILTER: true
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################
@@ -44,4 +43,5 @@ PARAMS_TOOLS:
     GATK_HAPLOTYPECALLER: "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
     GATK_GENOMICSDBIMPORT: ""
     GATK_GENOTYPEGVCFS: "-new-qual"
-    VCFTOOLS: "--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"
+    VCFTOOLS: "--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.05 --max-missing 0.7"
+    RAXML: "-m GTRGAMMAX -f a -x $RANDOM -# autoMRE -p 600"

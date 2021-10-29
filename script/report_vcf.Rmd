@@ -44,8 +44,8 @@ suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
 
-#basename <- tools::file_path_sans_ext(snakemake@input$freq)
-basename <- "All_samples_GenotypeGVCFs"
+basename <- tools::file_path_sans_ext(snakemake@input$freq)
+#basename <- "/home/sravel/Documents/GIT/RattlerSNP/testData/3_full_snp_calling_stats/All_samples_GenotypeGVCFs"
 ```
 
 This is the summary report for vcf: `r paste0(basename, ".vcf.gz")`
@@ -61,7 +61,7 @@ The first metric we will look at is the (Phred encoded) site quality. This is a 
 ```{r Variant quality, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 var_qual <- read_delim(paste0(basename, ".lqual"), delim = "\t",
-           col_names = c("chr", "pos", "qual"), skip = 1)
+           col_names = c("chr", "pos", "qual"), skip = 1, show_col_types = FALSE)
 
 a <- ggplot(var_qual, aes(qual)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3) + theme_light()
 ggplotly(a)
@@ -86,7 +86,7 @@ The output we generated with vcftools is the mean of the read depth across all i
 ```{r Variant mean depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
 var_depth <- read_delim(paste0(basename, ".ldepth.mean"), delim = "\t",
-           col_names = c("chr", "pos", "mean_depth", "var_depth"), skip = 1)
+           col_names = c("chr", "pos", "mean_depth", "var_depth"), skip = 1, show_col_types = FALSE)
 
 a <- ggplot(var_depth, aes(mean_depth)) + geom_area(fill = "dodgerblue1", colour = "black", alpha = 0.3, stat="bin", binwidth=0.1)+ theme_light()
 ggplotly(a)
@@ -114,7 +114,7 @@ One thing to keep in mind here is that different datasets will likely have diffe
 
 ```{r Variant missing max, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 var_miss <- read_delim(paste0(basename, ".lmiss"), delim = "\t",
-                       col_names = c("chr", "pos", "nchr", "nfiltered", "nmiss", "fmiss"), skip = 1)
+                       col_names = c("chr", "pos", "nchr", "nfiltered", "nmiss", "fmiss"), skip = 1, show_col_types = FALSE)
 
 a <- ggplot(var_miss, aes(fmiss)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3)+ theme_light()
 ggplotly(a)
@@ -134,7 +134,7 @@ Last of all for our per variant analyses, we will take a look at the distributio
 
 ```{r Minor allele frequency, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 var_freq <- read_delim(paste0(basename, ".frq"), delim = "\t",
-                       col_names = c("chr", "pos", "nalleles", "nchr", "a1", "a2", "a3"), skip = 1)
+                       col_names = c("chr", "pos", "nalleles", "nchr", "a1", "a2", "maf"), skip = 1, show_col_types = FALSE)
 
 # find minor allele frequency
 var_freq$maf <- var_freq %>% select(a1, a2) %>% apply(1, function(z) min(z))
@@ -171,7 +171,7 @@ First we will look at the distribution of mean depth among individuals.
 
 ```{r Mean depth per individual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 ind_depth <- read_delim(paste0(basename, ".idepth"), delim = "\t",
-                        col_names = c("ind", "nsites", "depth"), skip = 1)
+                        col_names = c("ind", "nsites", "depth"), skip = 1, show_col_types = FALSE)
 
 a <- ggplot(ind_depth, aes(depth)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.1)+ theme_light()
 ggplotly(a)
@@ -203,7 +203,7 @@ This is very similar to the missing data per site. Here we will focus on the fmi
 
 ```{r Proportion of missing data per individual, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 ind_miss  <- read_delim(paste0(basename, ".imiss"), delim = "\t",
-                        col_names = c("ind", "ndata", "nfiltered", "nmiss", "fmiss"), skip = 1)
+                        col_names = c("ind", "ndata", "nfiltered", "nmiss", "fmiss"), skip = 1, show_col_types = FALSE)
 
 a <- ggplot(ind_miss, aes(fmiss)) + geom_histogram(fill = "dodgerblue1", colour = "black", alpha = 0.3, binwidth = 0.01)+ theme_light()
 ggplotly(a)

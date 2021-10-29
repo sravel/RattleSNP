@@ -10,7 +10,7 @@ from collections import defaultdict, OrderedDict
 import pandas as pd
 from tempfile import NamedTemporaryFile
 from pathlib import PosixPath, Path
-from snakemake.logging import logger
+from snakemake.io import load_configfile
 from snakemake.utils import validate
 from snakemake.io import glob_wildcards
 import yaml
@@ -136,11 +136,25 @@ class RattleSNP(object):
     to read file config
     """
 
-    def __init__(self, config=None, path_config=None, tools_config=None, rattleSNP_path=None):
-        self.config = config
-        self.tools_config = tools_config
+    def __init__(self, workflow, config, rattleSNP_path=None):
+        # print(workflow.overwrite_clusterconfig)
+        # culebront_path = Path(workflow.snakefile).parent
+        # workflow is availbale only in __init
+        self.snakefile = workflow.snakefile
 
-        # path on file config
+        if not workflow.overwrite_configfiles:
+            raise ValueError("ERROR CulebrONT: You need to use --configfile option to snakemake command line")
+        else:
+            self.path_config = workflow.overwrite_configfiles[0]
+        self.cluster_config = workflow.overwrite_clusterconfig
+        # self.cluster_config = load_configfile(culebront_path.joinpath("cluster_config.yaml"))
+        self.tools_config = load_configfile(rattleSNP_path.joinpath("tools_path.yaml"))
+
+        # print("\n".join(list(workflow.__dict__.keys())))
+        # print(workflow.__dict__)
+
+        # --- Verification Configuration Files --- #
+        self.config = config
         self.fastq_path = None
         self.bam_path = None
         self.vcf_path = None
@@ -163,7 +177,8 @@ class RattleSNP(object):
         # calling
         self.calling_activated = False
 
-
+        # filter
+        self.vcf_filter_activated = False
 
         self.__check_config_dic()
 
@@ -321,9 +336,13 @@ class RattleSNP(object):
             self.bam_path = self.get_config_value(section="DATA", key="BAM")
             # self.mapping_tool_activated = Path(self.bam_path).stem
             self.samples, = glob_wildcards(f"{self.bam_path}{{bam}}.bam", followlinks=True)
-            print(self.samples)
 
-
+        # check VCF filter activation
+        self.vcf_filter_activated = self.__var_2_bool(tool="FILTER", key="", to_convert=self.get_config_value(section="FILTER"))
+        # If only VCF filtration get vcf path
+        if not self.mapping_activated and not self.calling_activated and self.vcf_filter_activated:
+            self.__check_file(section="DATA", key="VCF")
+            self.vcf_path = self.get_config_value(section="DATA", key="VCF")
 
         # check mitochondrial name is in fasta is not Nome
         self.mito_name = self.get_config_value('PARAMS', 'MITOCHONDRIAL_NAME')

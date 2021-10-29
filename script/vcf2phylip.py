@@ -160,9 +160,9 @@ def main():
 	# SETUP OUTPUT FILES
 	# Output filename will be the same as input file, indicating the minimum of samples specified
 	if filename.endswith(".gz"):
-		outfile = filename.replace(".vcf.gz",".min"+str(min_samples_locus))
+		outfile = filename.replace(".vcf.gz","")
 	else:
-		outfile = filename.replace(".vcf",".min"+str(min_samples_locus))
+		outfile = filename.replace(".vcf","")
 
 	# We need to create an intermediate file to hold the sequence data
 	# vertically and then transpose it to create the matrices

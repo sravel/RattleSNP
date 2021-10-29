@@ -1,0 +1,6 @@
+pandas~=1.3.4
+pysam~=0.17.0
+pysamstats
+biopython
+PyYAML~=5.3.1
+snakemake~=6.5.1
