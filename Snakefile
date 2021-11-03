@@ -7,7 +7,7 @@ from snakemake.logging import logger
 
 # load own functions
 from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-from script.module import RattleSNP, get_last_version, get_version, get_list_chromosome_names
+from script.module import RattleSNP, get_last_version, get_version
 
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
@@ -897,10 +897,7 @@ def get_filter_options(wildcards):
     keys = config["PARAMS"]["FILTER_SUFFIX"]
     values = config["PARAMS_TOOLS"]["VCFTOOLS"]
     dict_options = dict(zip(keys, values))
-    print(dict_options)
-    print(wildcards.vcf_suffix)
     options = dict_options[wildcards.vcf_suffix]
-    print(options)
     return options
 
 
@@ -994,7 +991,7 @@ rule vcf_to_geno:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        python3 {RATTLESNP_PATH}/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
+        python3 {RATTLESNP_PATH}/script/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
         """
 
 ######################################
@@ -1160,7 +1157,7 @@ rule run_raxml_ng:
         tools_config["MODULES"]["RAXML_NG"]
     shell:
         """
-            raxml-ng --parse --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}
+            raxml-ng --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}
         """
 # create log dir path
 # build_log_path(debug=False)
