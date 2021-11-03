@@ -4,8 +4,13 @@
 #SBATCH --error slurm-%x_%j.log
 #SBATCH --partition=long
 
-profile=$RATTLESNP"/IFB_profile/"
-echo $profile
+SOURCE="${BASH_SOURCE}"
+REAL_PATH_SOURCE="$(realpath ${SOURCE})"
+#echo "REAL_PATH_SOURCE is '$REAL_PATH_SOURCE'"
+RATTLESNP="$(dirname ${REAL_PATH_SOURCE})/"
+#echo "RATTLESNP is '$RATTLESNP'"
+profile=$RATTLESNP"IFB_profile/"
+#echo $profile
 
 # module help
 function help
@@ -27,7 +32,7 @@ function help
         -h = see help\n\n"
     exit 0
 }
-
+#exit
 dag=false
 
 ##################################################
@@ -54,6 +59,11 @@ if [ ! -z "$config" ] && [ -e $config ]; then
 
     config=`readlink -m $config`
     echo "CONFIG FILE IS $config"
+
+#    snakemake -p -s $RATTLESNP/Snakefile \
+#        --configfile $config \
+#        --cluster-config $profile"/cluster_config.yaml" \
+#        --profile $profile --dry-run
 
     if [ $dag == "true" ]; then
         snakemake -p -s $RATTLESNP/Snakefile \
