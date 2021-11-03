@@ -914,7 +914,8 @@ rule vcftools_filter:
                     - LOG output: {{log.output}}
             """
     envmodules:
-        tools_config["MODULES"]["VCFTOOLS"]
+        tools_config["MODULES"]["VCFTOOLS"],
+        tools_config["MODULES"]["SAMTOOLS"]
     shell:
         """
             vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout  | sed -r "s#\.\/\.#.#g" | bgzip -c 1> {output.vcf_file}
@@ -947,9 +948,9 @@ rule vcf_to_fasta:
     envmodules:
         tools_config["MODULES"]["PYTHON3"]
     shell:
-        """
-        python3 script/vcf2phylip.py -i {input.vcf_file_filter} -p -f
-        mv {params.fasta} {output.fasta}
+        f"""
+        python3 {RATTLESNP_PATH}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
+        mv {{params.fasta}} {{output.fasta}}
         """
 
 ######################################
