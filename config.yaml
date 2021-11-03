@@ -7,7 +7,7 @@ DATA:
     FASTQ: ""
     BAM: ""
     VCF: "/media/work/RattleSNP-git/data_test/vcf/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz"
-    REFERENCE_FILE: "/media/work/RattleSNP-git/data_test/ref.fasta"
+    REFERENCE_FILE: ""
     OUTPUT: "/media/work/RattleSNP-git/data_test/output"
 
 PARAMS:
@@ -27,6 +27,7 @@ MAPPING:
 SNPCALLING: false
 FILTER: true
 RAXML: true
+RAXML_NG: true
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################
@@ -46,3 +47,4 @@ PARAMS_TOOLS:
     GATK_GENOTYPEGVCFS: "-new-qual"
     VCFTOOLS: ["--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.05 --max-missing 0.7","--minDP 20 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"]
     RAXML: "-m GTRGAMMAX -f a -x $RANDOM -# autoMRE -p 600"
+    RAXML_NG: "--all --model GTR+G --tree pars{50},rand{50} --bs-trees 100 --seed $RANDOM"

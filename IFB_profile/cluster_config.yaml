@@ -104,9 +104,21 @@ vcf_to_fasta:
     error : 'slurm_logs/error/{rule}/vcf_to_fasta.e'
     job-name : '{rule}'
 
+vcf_to_geno:
+    cpus-per-task : 1
+    output : 'slurm_logs/stdout/{rule}/vcf_to_geno.o'
+    error : 'slurm_logs/error/{rule}/vcf_to_geno.e'
+    job-name : '{rule}'
+
 vcftools_filter:
     cpus-per-task : 1
     partition : "fast"
     output : 'slurm_logs/stdout/{rule}/vcftools_filter.o'
     error : 'slurm_logs/error/{rule}/vcftools_filter.e'
     job-name : '{rule}'
+
+run_raxml:
+    cpus-per-task : 20
+
+run_raxml_ng:
+    cpus-per-task : 20

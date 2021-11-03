@@ -71,18 +71,12 @@ basename_reference = Path(reference_file).stem
 out_dir = config["DATA"]["OUTPUT"]
 log_dir = f"{out_dir}LOGS/"
 
-CHROMOSOMES = get_list_chromosome_names(reference_file)
-CHROMOSOMES_WITHOUT_MITO = CHROMOSOMES.copy()
-chrom_mito = config["PARAMS"]['MITOCHONDRIAL_NAME']
-if chrom_mito and chrom_mito in CHROMOSOMES:
-    CHROMOSOMES_WITHOUT_MITO.remove(chrom_mito)
-elif chrom_mito and chrom_mito not in CHROMOSOMES:
-    raise
-
 cleaning = config["CLEANING"]["ATROPOS"]
 fastqc = config["FASTQC"]
 SNPcalling =  config["SNPCALLING"]
 build_stats =  config["MAPPING"]["BUILD_STATS"]
+
+
 
 # to lunch separator
 BWA_INDEX = ['amb','ann','bwt','pac','sa']
@@ -103,6 +97,8 @@ def get_threads(rule, default):
         return int(cluster_config['__default__']['cpus-per-task'])
     elif '__default__' in cluster_config and 'threads' in cluster_config['__default__']:
         return int(cluster_config['__default__']['threads'])
+    if workflow.global_resources["_cores"]:
+        return workflow.global_resources["_cores"]
     return default
 
 
@@ -180,6 +176,7 @@ def output_final(wildcars):
         dico_final.update({
                     "report_vcf_filter": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix=config['PARAMS']['FILTER_SUFFIX']),
                     #"fasta": expand(f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+                    "geno" :  expand(f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
     if rattlesnp.vcf_path:
         dico_final.update({
@@ -187,7 +184,11 @@ def output_final(wildcars):
                 })
     if rattlesnp.run_RAXML:
         dico_final.update({
-                    "RAXML": expand( f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+                    "RAXML": expand(f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+                })
+    if rattlesnp.run_RAXML_NG:
+        dico_final.update({
+                    "RAXML_NG": expand(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.raxml.bestTree', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
     # pp.pprint(dico_final)
     return dico_final
@@ -861,8 +862,8 @@ rule gatk_GenotypeGVCFs_merge:
 rule bcftools_concat:
     threads: get_threads('bcftools_concat', 1)
     input:
-            vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES),
-            vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = CHROMOSOMES_WITHOUT_MITO),
+            vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES),
+            vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES_WITHOUT_MITO),
     output:
             vcf_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz',
             tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz.tbi',
@@ -954,7 +955,7 @@ rule vcf_to_fasta:
                 Input:
                     - vcf : {{input.vcf_file_filter}}
                 Output:
-                    - vcf : {{output.fasta}}
+                    - fasta : {{output.fasta}}
                 Others
                     - Threads : {{threads}}
                     - LOG error: {{log.error}}
@@ -966,6 +967,34 @@ rule vcf_to_fasta:
         f"""
         python3 {RATTLESNP_PATH}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
         mv {{params.fasta}} {{output.fasta}}
+        """
+
+rule vcf_to_geno:
+    threads: get_threads('vcf_to_geno', 1)
+    input:
+            vcf_file_filter = rules.vcftools_filter.output.vcf_file
+    output:
+            geno = f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno',
+    log:
+            error =  f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.e',
+            output = f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - vcf : {{input.vcf_file_filter}}
+                Output:
+                    - geno : {{output.geno}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        tools_config["MODULES"]["PYTHON3"]
+    shell:
+        f"""
+        python3 {RATTLESNP_PATH}/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
         """
 
 ######################################
@@ -1094,7 +1123,44 @@ rule run_raxml:
         tools_config["MODULES"]["RAXML"]
     shell:
         """
-            raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.other_params} {params.other_params}
+            raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.other_params}
+        """
+
+
+rule run_raxml_ng:
+    """run raxml"""
+    threads: get_threads('run_raxml_ng', 1)
+    input:
+            fasta = rules.vcf_to_fasta.output.fasta
+    output:
+            tree = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.raxml.bestTree',
+            dir = directory(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/')
+    params:
+            prefix = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
+            other_params = lambda wc: config["PARAMS_TOOLS"]["RAXML_NG"]
+    log:
+            error =  f'{log_dir}raxml_ng/raxml{{vcf_suffix}}.e',
+            output = f'{log_dir}raxml_ng/raxml{{vcf_suffix}}.o'
+    message:
+            f"""
+            Running {{rule}}
+                Input:
+                    - fasta : {{input.fasta}}
+                Output:
+                    - tree : {{output.tree}}
+                    - dir : {{output.dir}}
+                Params:
+                    - other: {{params.other_params}}
+                Others
+                    - Threads : {{threads}}
+                    - LOG error: {{log.error}}
+                    - LOG output: {{log.output}}
+            """
+    envmodules:
+        tools_config["MODULES"]["RAXML_NG"]
+    shell:
+        """
+            raxml-ng --parse --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}
         """
 # create log dir path
 # build_log_path(debug=False)

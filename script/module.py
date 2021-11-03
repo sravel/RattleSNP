@@ -160,6 +160,10 @@ class RattleSNP(object):
         self.vcf_path = None
         self.samples = []
         self.run_RAXML = False
+        self.run_RAXML_NG = False
+
+        self.CHROMOSOMES = []
+        self.CHROMOSOMES_WITHOUT_MITO = []
 
         # if provided fastq files
         self.fastq_gzip = False
@@ -346,13 +350,18 @@ class RattleSNP(object):
             self.vcf_path = self.get_config_value(section="DATA", key="VCF")
 
         self.run_RAXML = self.__var_2_bool(tool="RAXML", key="", to_convert=self.get_config_value(section="RAXML"))
+        self.run_RAXML_NG = self.__var_2_bool(tool="RAXML_NG", key="", to_convert=self.get_config_value(section="RAXML_NG"))
 
         # check mitochondrial name is in fasta is not Nome
-        self.mito_name = self.get_config_value('PARAMS', 'MITOCHONDRIAL_NAME')
-        chromosome_list = get_list_chromosome_names(self.get_config_value('DATA', 'REFERENCE_FILE'))
-        if self.mito_name and self.mito_name not in chromosome_list:
-            raise NameError(
-                f'CONFIG FILE CHECKING FAIL : in the "PARAMS" section, "MITOCHONDRIAL_NAME" key: the name "{self.mito_name}" is not in fasta file {self.get_config_value("DATA", "REFERENCE_FILE")}\n')
+        if self.cleaning_activated or self.mapping_activated or self.calling_activated:
+            self.mito_name = self.get_config_value('PARAMS', 'MITOCHONDRIAL_NAME')
+            self.CHROMOSOMES = get_list_chromosome_names(self.get_config_value('DATA', 'REFERENCE_FILE'))
+            if self.mito_name and self.mito_name not in self.CHROMOSOMES:
+                raise NameError(
+                    f'CONFIG FILE CHECKING FAIL : in the "PARAMS" section, "MITOCHONDRIAL_NAME" key: the name "{self.mito_name}" is not in fasta file {self.get_config_value("DATA", "REFERENCE_FILE")}\n')
+            self.CHROMOSOMES_WITHOUT_MITO = self.CHROMOSOMES.copy()
+            if self.mito_name and self.mito_name in self.CHROMOSOMES:
+                self.CHROMOSOMES_WITHOUT_MITO.remove(self.mito_name)
 
     def __repr__(self):
         return f"{self.__class__}({pprint.pprint(self.__dict__)})"

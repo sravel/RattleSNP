@@ -14,3 +14,4 @@ MODULES:
     "VCFTOOLS": "vcftools/0.1.16"    # for filter vcf
     "R": "r/4.1.0"
     "RAXML": "raxml"
+    "RAXML_NG": "raxml-ng"
