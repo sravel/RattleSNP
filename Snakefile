@@ -179,11 +179,15 @@ def output_final(wildcars):
     if rattlesnp.vcf_filter_activated:
         dico_final.update({
                     "report_vcf_filter": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix=config['PARAMS']['FILTER_SUFFIX']),
-                    "fasta": f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{config["PARAMS"]["FILTER_SUFFIX"]}.fasta'
+                    #"fasta": expand(f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
     if rattlesnp.vcf_path:
         dico_final.update({
                     "report_vcf_user": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix="_user")
+                })
+    if rattlesnp.run_RAXML:
+        dico_final.update({
+                    "RAXML": expand( f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
     # pp.pprint(dico_final)
     return dico_final
@@ -888,17 +892,28 @@ rule bcftools_concat:
 ######################################
 # POST VCF
 ######################################
+def get_filter_options(wildcards):
+    keys = config["PARAMS"]["FILTER_SUFFIX"]
+    values = config["PARAMS_TOOLS"]["VCFTOOLS"]
+    dict_options = dict(zip(keys, values))
+    print(dict_options)
+    print(wildcards.vcf_suffix)
+    options = dict_options[wildcards.vcf_suffix]
+    print(options)
+    return options
+
+
 rule vcftools_filter:
     threads: get_threads('vcftools_filter', 1)
     input:
             vcf_file_all = rules.bcftools_concat.output.vcf_file if not rattlesnp.vcf_path else rattlesnp.vcf_path
     output:
-            vcf_file = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{config["PARAMS"]["FILTER_SUFFIX"]}.vcf.gz',
+            vcf_file = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.vcf.gz' if f"{{vcf_suffix}}" != "_user" else "",
     params:
-            other_options = config["PARAMS_TOOLS"]["VCFTOOLS"],
+            other_options = get_filter_options
     log:
-            error =  f'{log_dir}vcftools_filter/vcftools_filter.e',
-            output = f'{log_dir}vcftools_filter/vcftools_filter.o'
+            error =  f'{log_dir}vcftools_filter/vcftools_filter{{vcf_suffix}}.e',
+            output = f'{log_dir}vcftools_filter/vcftools_filter{{vcf_suffix}}.o'
     message:
             f"""
             Running {{rule}}
@@ -927,12 +942,12 @@ rule vcf_to_fasta:
     input:
             vcf_file_filter = rules.vcftools_filter.output.vcf_file
     output:
-            fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{config["PARAMS"]["FILTER_SUFFIX"]}.fasta',
+            fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
     params:
-            fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{config["PARAMS"]["FILTER_SUFFIX"]}.fasta',
+            fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
     log:
-            error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta{config["PARAMS"]["FILTER_SUFFIX"]}.e',
-            output = f'{log_dir}vcf_to_fasta/vcf_to_fasta{config["PARAMS"]["FILTER_SUFFIX"]}.o'
+            error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.e',
+            output = f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.o'
     message:
             f"""
             Running {{rule}}
@@ -961,7 +976,7 @@ def vcf_to_stats(wildcards):
         return rattlesnp.vcf_path
     elif wildcards.vcf_suffix == "_raw":
         return rules.bcftools_concat.output.vcf_file
-    elif wildcards.vcf_suffix == config['PARAMS']['FILTER_SUFFIX']:
+    elif wildcards.vcf_suffix in config['PARAMS']['FILTER_SUFFIX']:
         return rules.vcftools_filter.output.vcf_file
 
 rule vcf_stats:
@@ -1055,13 +1070,13 @@ rule run_raxml:
     input:
             fasta = rules.vcf_to_fasta.output.fasta
     output:
-            tree = f'{out_dir}6_raxml/filter{config["PARAMS"]["FILTER_SUFFIX"]}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{config["PARAMS"]["FILTER_SUFFIX"]}',
-            dir = directory(f'{out_dir}6_raxml/filter{config["PARAMS"]["FILTER_SUFFIX"]}/')
+            tree = f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
+            dir = directory(f'{out_dir}6_raxml/filter{{vcf_suffix}}/')
     params:
             other_params = config["PARAMS_TOOLS"]["RAXML"]
     log:
-            error =  f'{log_dir}raxml/raxml{config["PARAMS"]["FILTER_SUFFIX"]}.e',
-            output = f'{log_dir}raxml/raxml{config["PARAMS"]["FILTER_SUFFIX"]}.o'
+            error =  f'{log_dir}raxml/raxml{{vcf_suffix}}.e',
+            output = f'{log_dir}raxml/raxml{{vcf_suffix}}.o'
     message:
             f"""
             Running {{rule}}
@@ -1079,7 +1094,7 @@ rule run_raxml:
         tools_config["MODULES"]["RAXML"]
     shell:
         """
-            raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.prefix} {params.other_params}
+            raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.other_params} {params.other_params}
         """
 # create log dir path
 # build_log_path(debug=False)

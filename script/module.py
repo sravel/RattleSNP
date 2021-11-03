@@ -159,6 +159,7 @@ class RattleSNP(object):
         self.bam_path = None
         self.vcf_path = None
         self.samples = []
+        self.run_RAXML = False
 
         # if provided fastq files
         self.fastq_gzip = False
@@ -343,6 +344,8 @@ class RattleSNP(object):
         if not self.mapping_activated and not self.calling_activated and self.vcf_filter_activated:
             self.__check_file(section="DATA", key="VCF")
             self.vcf_path = self.get_config_value(section="DATA", key="VCF")
+
+        self.run_RAXML = self.__var_2_bool(tool="RAXML", key="", to_convert=self.get_config_value(section="RAXML"))
 
         # check mitochondrial name is in fasta is not Nome
         self.mito_name = self.get_config_value('PARAMS', 'MITOCHONDRIAL_NAME')
