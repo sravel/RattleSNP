@@ -13,7 +13,8 @@ DATA:
 PARAMS:
     MITOCHONDRIAL_NAME : ""
     # The filter suffix to add on vcf filter in order to allow multiple filter
-    FILTER_SUFFIX: ["-Q30-DP5-MAF005-MISS07", "-Q30-DP20-MAF001-MISS05"]
+    FILTER_SUFFIX: ["-Q30-DP5-MAF005-MISS07",
+                    "-Q30-DP20-MAF001-MISS05"]
 
 ################################
 # Pipeline tools activation
@@ -45,6 +46,7 @@ PARAMS_TOOLS:
     GATK_HAPLOTYPECALLER: "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
     GATK_GENOMICSDBIMPORT: ""
     GATK_GENOTYPEGVCFS: "-new-qual"
-    VCFTOOLS: ["--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.05 --max-missing 0.7","--minDP 20 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"]
+    VCFTOOLS: ["--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.05 --max-missing 0.7",
+               "--minDP 20 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"]
     RAXML: "-m GTRGAMMAX -f a -x $RANDOM -# autoMRE -p 600"
     RAXML_NG: "--all --model GTR+G --tree pars{50},rand{50} --bs-trees 100 --seed $RANDOM"

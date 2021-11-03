@@ -143,7 +143,7 @@ class RattleSNP(object):
         self.snakefile = workflow.snakefile
 
         if not workflow.overwrite_configfiles:
-            raise ValueError("ERROR CulebrONT: You need to use --configfile option to snakemake command line")
+            raise ValueError("ERROR RattleSNP: You need to use --configfile option to snakemake command line")
         else:
             self.path_config = workflow.overwrite_configfiles[0]
         self.cluster_config = workflow.overwrite_clusterconfig
