@@ -1,124 +1,129 @@
 __default__:
-    cpus-per-task : 4
-    ntasks : 1
-    mem-per-cpu : 4G
-    partition : fast
-    output : 'slurm_logs/stdout/{rule}/{wildcards}.o'
-    error : 'slurm_logs/error/{rule}/{wildcards}.e'
-    job-name : '{rule}.{wildcards}'
+    cpus-per-task: 4
+    ntasks: 1
+    mem-per-cpu: 4G
+    partition: fast
+    output: 'slurm_logs/stdout/{rule}/{wildcards}.o'
+    error: 'slurm_logs/error/{rule}/{wildcards}.e'
+    job-name: '{rule}.{wildcards}'
 
 bwa_index:
-    cpus-per-task : 1
-    partition : "fast"
+    cpus-per-task: 1
+    partition: "fast"
 
 run_atropos:
-    cpus-per-task : 6
-    partition : "fast"
+    cpus-per-task: 6
+    partition: "fast"
 
 run_fastqc:
-    cpus-per-task : 2
-    partition : "fast"
+    cpus-per-task: 2
+    partition: "fast"
 
 run_bwa_aln_PE:
-    cpus-per-task : 6
-    mem-per-cpu : 4G
-    partition : "long"
+    cpus-per-task: 6
+    mem-per-cpu: 4G
+    partition: "long"
 
 bwa_sampe_sort_bam:
-    cpus-per-task : 6
-    mem-per-cpu : 4G
-    partition : "long"
+    cpus-per-task: 6
+    mem-per-cpu: 4G
+    partition: "long"
 
 bwa_mem_sort_bam:
-    cpus-per-task : 6
-    mem-per-cpu : 4G
-    partition : "long"
+    cpus-per-task: 6
+    mem-per-cpu: 4G
+    partition: "long"
 
 samtools_index:
-    partition : "fast"
+    partition: "fast"
 
 samtools_idxstats:
-    cpus-per-task : 4
-    mem-per-cpu : 4G
-    partition : "fast"
+    cpus-per-task: 4
+    mem-per-cpu: 4G
+    partition: "fast"
 
 samtools_depth:
-    mem-per-cpu : 4G
+    mem-per-cpu: 4G
 
 merge_idxstats:
-    cpus-per-task : 1
-    mem-per-cpu : 30G
-    partition : "fast"
+    cpus-per-task: 1
+    mem-per-cpu: 30G
+    partition: "fast"
 
 bam_stats_to_csv:
-    mem-per-cpu : 20G
+    mem-per-cpu: 20G
 
 merge_bam_stats:
-    cpus-per-task : 1
-    partition : "fast"
+    cpus-per-task: 1
+    partition: "fast"
 
 picardTools_mark_duplicates:
-    cpus-per-task : 1
-    mem-per-cpu : 20G
-    partition : "long"
+    cpus-per-task: 1
+    mem-per-cpu: 20G
+    partition: "long"
 
 gatk_HaplotypeCaller:
-    cpus-per-task : 4
-    mem-per-cpu : 20G
-    partition : "long"
+    cpus-per-task: 4
+    mem-per-cpu: 20G
+    partition: "long"
 
 gatk_GenomicsDBImport:
-    cpus-per-task : 1
-    mem-per-cpu : 20G
-    partition : "long"
+    cpus-per-task: 1
+    mem-per-cpu: 20G
+    partition: "long"
 
 
 gatk_GenotypeGVCFs_merge:
-    cpus-per-task : 1
-    mem-per-cpu : 30G
-    partition : "long"
+    cpus-per-task: 1
+    mem-per-cpu: 30G
+    partition: "long"
 
 create_sequence_dict:
-    cpus-per-task : 1
-    mem-per-cpu : 10G
-    partition : "fast"
+    cpus-per-task: 1
+    mem-per-cpu: 10G
+    partition: "fast"
 
 bcftools_concat:
-    cpus-per-task : 10
-    partition : "fast"
+    cpus-per-task: 10
+    partition: "fast"
 
 report:
-    cpus-per-task : 1
-    output : 'slurm_logs/stdout/{rule}/run_report.o'
-    error : 'slurm_logs/error/{rule}/run_report.e'
-    job-name : '{rule}'
+    cpus-per-task: 1
+    output: 'slurm_logs/stdout/{rule}/run_report.o'
+    error: 'slurm_logs/error/{rule}/run_report.e'
+    job-name: '{rule}'
 
 report_vcf:
-    cpus-per-task : 1
-    mem-per-cpu : 10G
+    cpus-per-task: 1
+    mem-per-cpu: 90G
+    partition: "fast"
 
 
 vcf_to_fasta:
-    cpus-per-task : 1
-    output : 'slurm_logs/stdout/{rule}/vcf_to_fasta.o'
-    error : 'slurm_logs/error/{rule}/vcf_to_fasta.e'
-    job-name : '{rule}'
+    cpus-per-task: 1
+    output: 'slurm_logs/stdout/{rule}/vcf_to_fasta.o'
+    error: 'slurm_logs/error/{rule}/vcf_to_fasta.e'
+    job-name: '{rule}'
 
 vcf_to_geno:
-    cpus-per-task : 1
-    output : 'slurm_logs/stdout/{rule}/vcf_to_geno.o'
-    error : 'slurm_logs/error/{rule}/vcf_to_geno.e'
-    job-name : '{rule}'
+    cpus-per-task: 1
+    output: 'slurm_logs/stdout/{rule}/vcf_to_geno.o'
+    error: 'slurm_logs/error/{rule}/vcf_to_geno.e'
+    job-name: '{rule}'
 
 vcftools_filter:
-    cpus-per-task : 1
-    partition : "fast"
-    output : 'slurm_logs/stdout/{rule}/vcftools_filter.o'
-    error : 'slurm_logs/error/{rule}/vcftools_filter.e'
-    job-name : '{rule}'
+    cpus-per-task: 1
+    partition: "fast"
+    output: 'slurm_logs/stdout/{rule}/vcftools_filter.o'
+    error: 'slurm_logs/error/{rule}/vcftools_filter.e'
+    job-name: '{rule}'
 
 run_raxml:
-    cpus-per-task : 20
+    cpus-per-task: 20
 
 run_raxml_ng:
-    cpus-per-task : 20
+    cpus-per-task: 10
+
+vcf_stats:
+    mem-per-cpu: 30G
+    partition: "fast"

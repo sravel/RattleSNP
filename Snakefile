@@ -89,7 +89,7 @@ def get_fastq_file():
     # print(dico_mapping)
     return dico_mapping
 
-def output_final():
+def output_final(wildcards):
     """FINAL RULE"""
     dico_final = {}
     if cleaning:

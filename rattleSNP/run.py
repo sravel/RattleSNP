@@ -65,7 +65,7 @@ def runlocal(config, threads, additional, pdf):
     print(rattleSNP.description_tools)
     print(f'    Config file: {config}')
 
-    cmd_snakemake_base = f"snakemake --cores {threads} --show-failed-logs -p -s {rattleSNP.RATTLESNP_SNAKEFILE} --configfile {config.as_posix()} {additional}"
+    cmd_snakemake_base = f"snakemake --cores {threads} --show-failed-logs --printshellcmds -s {rattleSNP.RATTLESNP_SNAKEFILE} --configfile {config.as_posix()} {additional}"
     print(f"    {cmd_snakemake_base}\n")
 
     os.system(cmd_snakemake_base)
