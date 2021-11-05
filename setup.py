@@ -59,7 +59,9 @@ def main():
         zip_safe=False,  # Don't install the lib as an .egg zipfile
         entry_points={
             rattleSNP.__name__: [rattleSNP.__name__ + " = __init__"],
-            'console_scripts'   : ["rattleSNP = rattleSNP.run_rattleSNP:main"]},
+            'console_scripts'   : ["rattleSNP = rattleSNP.run_rattleSNP:main",
+                                   "vcf2geno = rattleSNP.scripts.vcf2geno:main",
+                                   "vcf2phylip = rattleSNP.scripts.vcf2phylip:main"]},
     )
 
 

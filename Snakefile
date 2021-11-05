@@ -910,7 +910,7 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        python3 {rattleSNP.RATTLESNP_PATH}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
+        vcf2phylip -i {{input.vcf_file_filter}} -p -f
         mv {{params.fasta}} {{output.fasta}}
         """
 
@@ -939,7 +939,7 @@ rule vcf_to_geno:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        python3 {rattleSNP.RATTLESNP_PATH}/script/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
+        vcf2geno --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
         """
 
 ######################################
