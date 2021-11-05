@@ -6,58 +6,26 @@ import pprint
 from snakemake.logging import logger
 
 # load own functions
-from script.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-from script.module import RattleSNP, get_last_version, get_version
+import rattleSNP
+from rattleSNP.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from rattleSNP.module import RattleSNP
 
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
 
 # recovery basedir where RattleSNP was installed
-basedir = Path(workflow.snakefile).parent.as_posix()
-RATTLESNP_PATH = Path(workflow.snakefile).parent
-
-logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
-
-version_RattleSNP = get_version(basedir)
-
-logger.info("""
-    Welcome to RattleSNP  !
-    Created on November 2019
-    version: """+version_RattleSNP+"""
-    @author: Sebastien Ravel (CIRAD)
-    @email: sebastien.ravel@cirad.fr
-
-    #                       _.--....
-    #              _....---;:'::' ^__/
-    #            .' `'`___....---=-'`
-    #           /::' (`
-    #           \\'   `:.                   `OooOOo.                    o        .oOOOo.  o.     O OooOOo.
-    #            `\::.  ';-"":::-._  {}      o     `o                  O         o     o  Oo     o O     `O
-    #         _.--'`\:' .'`-.`'`.' `{I}      O      O         O    O   o         O.       O O    O o      O
-    #      .-' `' .;;`\::.   '. _: {-I}`\\   o     .O        oOo  oOo  O          `OOoo.  O  o   o O     .o
-    #    .'  .:.  `:: _):::  _;' `{=I}.:|    OOooOO'  .oOoO'  o    o   o  .oOo.        `O O   o  O oOooOO'
-    #   /.  ::::`":::` ':'.-'`':. {_I}::/    o    o   O   o   O    O   O  OooO'         o o    O O o
-    #   |:. ':'  :::::  .':'`:. `'|':|:'     O     O  o   O   o    o   o  O      O.    .O o     Oo O
-    #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'   `oooO'  O     `o o'
-    #     '--.:::...---'\:'.:`':`':./
-    #                    '-::..:::-'
-
-    Please cite our github https://github.com/sravel/RattleSNP
-    Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
-    and GPLv3 Intellectual property belongs to CIRAD and authors.
-    """+get_last_version(version_RattleSNP))
-
+# logger.info(rattleSNP.description_tools)
 
 # pp(workflow.basedir)
-rattlesnp = RattleSNP(workflow, config, RATTLESNP_PATH)
+rattlesnp = RattleSNP(workflow, config)
 tools_config = rattlesnp.tools_config
 cluster_config = rattlesnp.cluster_config
 
-# pp(rattlesnp.export_use_yaml)
+# print(rattlesnp.export_use_yaml)
 # print for debug:
-# logger.debug(pp(rattlesnp))
+# logger.debug(rattlesnp)
 # exit()
-
+# print(tools_config)
 
 # exit()
 
@@ -101,24 +69,8 @@ def get_threads(rule, default):
         return workflow.global_resources["_cores"]
     return default
 
-
-#*###############################################################################
-def build_log_path(debug=False):
-    """
-        Create '{working_dir}LOGS/{rules_name}' to prepare log path for all rules.
-        The function is need when you run on cluster mode but is mandatory to append the call at the end of Snakefile like
-        build_log_path(debug=False)
-        Debug option is to print only the path.
-    :param debug:
-    :return:
-    """
-    if debug:
-        print("\n".join(Path(f"{log_dir}{rule.name}/").as_posix() for rule in list(workflow.rules)))
-    else:
-        [Path(f"{log_dir}{rule.name}/").mkdir(parents=True, exist_ok=True) for rule in list(workflow.rules)]
-
 def get_fastq_file():
-    """return if file provide from cleanning or direct sample"""
+    """return if file provide from cleaning or direct sample"""
 
     dico_mapping = {
                     "fasta": reference_file,
@@ -137,12 +89,8 @@ def get_fastq_file():
     # print(dico_mapping)
     return dico_mapping
 
-def output_final(wildcars):
-    """
-    FINAL RULE
-    :param wildcars:
-    :return:
-    """
+def output_final():
+    """FINAL RULE"""
     dico_final = {}
     if cleaning:
         dico_final.update({
@@ -231,7 +179,7 @@ rule bwa_index:
 
 # 1=atropos
 rule run_atropos:
-    """Run atropos for cleanning data"""
+    """Run atropos for cleaning data"""
     threads: get_threads('run_atropos', 2)
     input:
             R1 = f"{fastq_dir}{{samples}}_R1.fastq.gz",
@@ -266,7 +214,7 @@ rule run_atropos:
         """
 
 rule run_fastqc:
-    """Run fastqc for controle data"""
+    """Run fastqc for control data"""
     threads: get_threads('run_fastqc', 1)
     input:
             R1 = rules.run_atropos.output.R1 if cleaning else f"{fastq_dir}{{samples}}_R1{rattlesnp.fastq_files_ext}",
@@ -501,9 +449,9 @@ rule merge_idxstats:
     """merge all samtools idxstats files"""
     threads : get_threads('merge_idxstats', 1)
     input :
-            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlesnp.samples),
+            csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlesnp.samples)
     output :
-            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_resume.csv", category="Resume mapping infos")
+            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_resume.csv", category="Resume mapping info's")
     log:
             error =  f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
             output = f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
@@ -586,9 +534,9 @@ rule merge_bam_stats:
     """merge all bam_stats_to_csv files"""
     threads : get_threads('merge_bam_stats', 1)
     input :
-            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlesnp.samples),
+            csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlesnp.samples)
     output :
-            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping infos")
+            csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping info's")
     log:
             error =  f'{log_dir}merge_bam_stats/mergeResume.e',
             output = f'{log_dir}merge_bam_stats/mergeResume.o'
@@ -613,9 +561,9 @@ rule report:
     threads: get_threads('report', 1)
     input:
          depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
-         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge,
+         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
     output:
-        report = f"{out_dir}1_mapping/STATS/report.html",
+        report = f"{out_dir}1_mapping/STATS/report.html"
     log:
             error =  f'{log_dir}report/report.e',
             output = f'{log_dir}report/report.o'
@@ -779,7 +727,7 @@ rule gatk_HaplotypeCaller:
 
 def get_gvcf_list(list):
     gvcf_list = " -V ".join(list)
-    return(f"-V {gvcf_list}")
+    return f"-V {gvcf_list}"
 
 
 rule gatk_GenomicsDBImport:
@@ -787,9 +735,9 @@ rule gatk_GenomicsDBImport:
     threads: get_threads('gatk_GenomicsDBImport', 1)
     input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
             reference = reference_file,
-            dict = rules.create_sequence_dict.output.dict,
+            dict = rules.create_sequence_dict.output.dict
     output:
-            db = directory(f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}"),
+            db = directory(f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}")
     params:
             java_mem="20g",                   # TODO add argument to cluster_config
             interval = "{chromosomes}",
@@ -831,7 +779,7 @@ rule gatk_GenotypeGVCFs_merge:
             reference = reference_file,
             dict = rules.create_sequence_dict.output.dict
     output:
-            vcf_file = f'{out_dir}2_snp_calling/SplitByChromosome/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf',
+            vcf_file = f'{out_dir}2_snp_calling/SplitByChromosome/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf'
     params:
             java_mem="30g",              # TODO add argument to cluster_config
             other_options = config["PARAMS_TOOLS"]["GATK_GENOTYPEGVCFS"]
@@ -863,10 +811,10 @@ rule bcftools_concat:
     threads: get_threads('bcftools_concat', 1)
     input:
             vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES),
-            vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES_WITHOUT_MITO),
+            vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES_WITHOUT_MITO)
     output:
             vcf_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz',
-            tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz.tbi',
+            tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz.tbi'
     log:
             error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
             output = f'{log_dir}bcftools_concat/bcftools_concat.o'
@@ -906,7 +854,7 @@ rule vcftools_filter:
     input:
             vcf_file_all = rules.bcftools_concat.output.vcf_file if not rattlesnp.vcf_path else rattlesnp.vcf_path
     output:
-            vcf_file = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.vcf.gz' if f"{{vcf_suffix}}" != "_user" else "",
+            vcf_file = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.vcf.gz' if f"{{vcf_suffix}}" != "_user" else ""
     params:
             other_options = get_filter_options
     log:
@@ -940,9 +888,9 @@ rule vcf_to_fasta:
     input:
             vcf_file_filter = rules.vcftools_filter.output.vcf_file
     output:
-            fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
+            fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta'
     params:
-            fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
+            fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta'
     log:
             error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.e',
             output = f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.o'
@@ -962,7 +910,7 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        python3 {RATTLESNP_PATH}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
+        python3 {rattleSNP.RATTLESNP_PATH}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
         mv {{params.fasta}} {{output.fasta}}
         """
 
@@ -971,7 +919,7 @@ rule vcf_to_geno:
     input:
             vcf_file_filter = rules.vcftools_filter.output.vcf_file
     output:
-            geno = f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno',
+            geno = f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno'
     log:
             error =  f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.e',
             output = f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.o'
@@ -991,7 +939,7 @@ rule vcf_to_geno:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        python3 {RATTLESNP_PATH}/script/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
+        python3 {rattleSNP.RATTLESNP_PATH}/script/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
         """
 
 ######################################
@@ -1015,7 +963,7 @@ rule vcf_stats:
             depth_mean = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.ldepth.mean',
             qual = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lqual',
             missing_ind = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.imiss',
-            miss = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lmiss',
+            miss = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lmiss'
     params:
             dirout = directory(f'{out_dir}3_all_snp_calling_stats/')
     log:
@@ -1048,8 +996,7 @@ rule vcf_stats:
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-mean-depth --stdout 1> {output.depth_mean}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --site-quality --stdout 1> {output.qual}
             vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-indv --stdout 1> {output.missing_ind}
-            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}
-            cat {output.missing_ind} | awk '{{if($5>0.75)print $1}}'|grep -v INDV > {params.dirout}/remove-indv_75perc) 2>>{log.error}
+            vcftools --gzvcf {input.vcf_file_all}  --remove-indels --missing-site --stdout 1> {output.miss}) 2>>{log.error}
         """
 
 rule report_vcf:
@@ -1062,7 +1009,7 @@ rule report_vcf:
             missing_ind = rules.vcf_stats.output.missing_ind,
             miss = rules.vcf_stats.output.miss
     output:
-            report = f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html",
+            report = f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html"
     log:
             error =  f'{log_dir}report_vcf/report{{vcf_suffix}}.e',
             output = f'{log_dir}report_vcf/report{{vcf_suffix}}.o'
@@ -1134,7 +1081,7 @@ rule run_raxml_ng:
             dir = directory(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/')
     params:
             prefix = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
-            other_params = lambda wc: config["PARAMS_TOOLS"]["RAXML_NG"]
+            other_params = lambda wildcards: config["PARAMS_TOOLS"]["RAXML_NG"]
     log:
             error =  f'{log_dir}raxml_ng/raxml{{vcf_suffix}}.e',
             output = f'{log_dir}raxml_ng/raxml{{vcf_suffix}}.o'
@@ -1159,5 +1106,3 @@ rule run_raxml_ng:
         """
             raxml-ng --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}
         """
-# create log dir path
-# build_log_path(debug=False)

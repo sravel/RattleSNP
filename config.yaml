@@ -6,9 +6,9 @@
 DATA:
     FASTQ: ""
     BAM: ""
-    VCF: "/media/work/RattleSNP-git/data_test/vcf/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz"
+    VCF: "./data_test/vcf/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz"
     REFERENCE_FILE: ""
-    OUTPUT: "/media/work/RattleSNP-git/data_test/output"
+    OUTPUT: "./data_test/output"
 
 PARAMS:
     MITOCHONDRIAL_NAME : ""
@@ -27,8 +27,8 @@ MAPPING:
     BUILD_STATS: false
 SNPCALLING: false
 FILTER: true
-RAXML: true
-RAXML_NG: true
+RAXML: false
+RAXML_NG: false
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################

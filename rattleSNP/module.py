@@ -8,15 +8,14 @@
 import pysam
 from collections import defaultdict, OrderedDict
 import pandas as pd
-from tempfile import NamedTemporaryFile
-from pathlib import PosixPath, Path
+from pathlib import  Path
 from snakemake.io import load_configfile
-from snakemake.utils import validate
 from snakemake.io import glob_wildcards
 import yaml
 import pprint
 import re
 import os
+import rattleSNP
 
 ################################################
 # environment settings:
@@ -136,7 +135,7 @@ class RattleSNP(object):
     to read file config
     """
 
-    def __init__(self, workflow, config, rattleSNP_path=None):
+    def __init__(self, workflow, config):
         # print(workflow.overwrite_clusterconfig)
         # culebront_path = Path(workflow.snakefile).parent
         # workflow is availbale only in __init
@@ -148,7 +147,7 @@ class RattleSNP(object):
             self.path_config = workflow.overwrite_configfiles[0]
         self.cluster_config = workflow.overwrite_clusterconfig
         # self.cluster_config = load_configfile(culebront_path.joinpath("cluster_config.yaml"))
-        self.tools_config = load_configfile(rattleSNP_path.joinpath("tools_path.yaml"))
+        self.tools_config = load_configfile(rattleSNP.RATTLESNP_TOOLS_PATH)
 
         # print("\n".join(list(workflow.__dict__.keys())))
         # print(workflow.__dict__)

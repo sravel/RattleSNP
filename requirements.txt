@@ -4,3 +4,5 @@ pysamstats
 biopython
 PyYAML~=5.3.1
 snakemake~=6.5.1
+setuptools~=45.2.0
+Click~=7.0

@@ -6,7 +6,7 @@ MODULES:
     "SAMTOOLS": "samtools/1.10"                  # use for filter reads and convert sam to bam
     "PYTHON3": "python/3.7"                    # Python3 >=3.6 with require libraries
     "BWA": "bwa/0.7.17"                         # for make the mapping
-    "ATROPOS": ""                    # for call atropos
+    "ATROPOS": "python/3.7"                    # for call atropos
     "FASTQC": "fastqc/0.11.9"                   # for control quality
     "PICARDTOOLS": "picard/2.23.5"         # for control quality
     "GATK4": "gatk4/4.2.0.0"                     # for control quality
