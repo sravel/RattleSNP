@@ -8,7 +8,7 @@ import os
 @click.option('--clusterconfig', '-k', default=None, type=click.Path(exists=True), required=False, help='Overwrite profile clusterconfig file for run rattleSNP')
 @click.option('--profile', '-k', default=None, type=click.Path(exists=True), required=False, help='Path to snakemake profile for run rattleSNP')
 @click.option('--tools', '-t', default=None, type=click.Path(exists=True), required=False, help='Path to tools_path.yaml for run rattleSNP')
-@click.option('--additional', '-a', default=None, type=str, required=False, help='Additional snakemake command line arguments')
+@click.option('--additional', '-a', default="", type=str, required=False, help='Additional snakemake command line arguments')
 @click.option('--pdf', '-p', is_flag=True, required=False, default=False, help='run snakemake with --dag, --rulegraph and --filegraph')
 def run(config, clusterconfig, profile, tools, additional, pdf):
     """Run the workflow"""

@@ -89,9 +89,6 @@ bcftools_concat:
 
 report:
     cpus-per-task: 1
-    output: 'slurm_logs/stdout/{rule}/run_report.o'
-    error: 'slurm_logs/error/{rule}/run_report.e'
-    job-name: '{rule}'
 
 report_vcf:
     cpus-per-task: 1
@@ -101,22 +98,13 @@ report_vcf:
 
 vcf_to_fasta:
     cpus-per-task: 1
-    output: 'slurm_logs/stdout/{rule}/vcf_to_fasta.o'
-    error: 'slurm_logs/error/{rule}/vcf_to_fasta.e'
-    job-name: '{rule}'
 
 vcf_to_geno:
     cpus-per-task: 1
-    output: 'slurm_logs/stdout/{rule}/vcf_to_geno.o'
-    error: 'slurm_logs/error/{rule}/vcf_to_geno.e'
-    job-name: '{rule}'
 
 vcftools_filter:
     cpus-per-task: 1
     partition: "fast"
-    output: 'slurm_logs/stdout/{rule}/vcftools_filter.o'
-    error: 'slurm_logs/error/{rule}/vcftools_filter.e'
-    job-name: '{rule}'
 
 run_raxml:
     cpus-per-task: 20
