@@ -145,10 +145,12 @@ class RattleSNP(object):
             self.path_config = workflow.overwrite_configfiles[0]
         if not workflow.overwrite_clusterconfig:
             self.cluster_config = load_configfile(rattleSNP.RATTLESNP_PROFILE.joinpath("cluster_config.yaml"))
+        else:
+            self.cluster_config = workflow.overwrite_clusterconfig
 
-        # self.cluster_config = load_configfile(culebront_path.joinpath("cluster_config.yaml"))
         self.tools_config = load_configfile(rattleSNP.RATTLESNP_TOOLS_PATH)
 
+        ### USE FOR DEBUG
         # pprint.pprint("\n".join(list(workflow.__dict__.keys())))
         # pprint.pprint(workflow.__dict__)
         # exit()

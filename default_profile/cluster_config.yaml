@@ -1,46 +1,42 @@
 __default__:
-    cpus-per-task: 4
-    ntasks: 1
+    cpus-per-task: 2
     mem-per-cpu: 4G
     partition: fast
-    output: 'slurm_logs/stdout/{rule}/{wildcards}.o'
-    error: 'slurm_logs/error/{rule}/{wildcards}.e'
+    output: '{log.output}_cluster'
+    error: '{log.error}_cluster'
     job-name: '{rule}.{wildcards}'
 
 bwa_index:
     cpus-per-task: 1
-    partition: "fast"
 
 run_atropos:
     cpus-per-task: 6
-    partition: "fast"
 
 run_fastqc:
     cpus-per-task: 2
-    partition: "fast"
 
 run_bwa_aln_PE:
     cpus-per-task: 6
     mem-per-cpu: 4G
-    partition: "long"
+    partition: long
 
 bwa_sampe_sort_bam:
     cpus-per-task: 6
     mem-per-cpu: 4G
-    partition: "long"
+    partition: long
 
 bwa_mem_sort_bam:
     cpus-per-task: 6
     mem-per-cpu: 4G
-    partition: "long"
+    partition: long
 
 samtools_index:
-    partition: "fast"
+    cpus-per-task: 1
 
 samtools_idxstats:
     cpus-per-task: 4
     mem-per-cpu: 4G
-    partition: "fast"
+
 
 samtools_depth:
     mem-per-cpu: 4G
@@ -48,44 +44,40 @@ samtools_depth:
 merge_idxstats:
     cpus-per-task: 1
     mem-per-cpu: 30G
-    partition: "fast"
 
 bam_stats_to_csv:
     mem-per-cpu: 20G
 
 merge_bam_stats:
     cpus-per-task: 1
-    partition: "fast"
 
 picardTools_mark_duplicates:
     cpus-per-task: 1
     mem-per-cpu: 20G
-    partition: "long"
+    partition: long
 
 gatk_HaplotypeCaller:
     cpus-per-task: 4
     mem-per-cpu: 20G
-    partition: "long"
+    partition: long
 
 gatk_GenomicsDBImport:
     cpus-per-task: 1
     mem-per-cpu: 20G
-    partition: "long"
+    partition: long
 
 
 gatk_GenotypeGVCFs_merge:
     cpus-per-task: 1
     mem-per-cpu: 30G
-    partition: "long"
+    partition: long
 
 create_sequence_dict:
     cpus-per-task: 1
     mem-per-cpu: 10G
-    partition: "fast"
 
 bcftools_concat:
     cpus-per-task: 10
-    partition: "fast"
 
 report:
     cpus-per-task: 1
@@ -93,8 +85,6 @@ report:
 report_vcf:
     cpus-per-task: 1
     mem-per-cpu: 90G
-    partition: "fast"
-
 
 vcf_to_fasta:
     cpus-per-task: 1
@@ -104,7 +94,6 @@ vcf_to_geno:
 
 vcftools_filter:
     cpus-per-task: 1
-    partition: "fast"
 
 run_raxml:
     cpus-per-task: 20
@@ -114,4 +103,3 @@ run_raxml_ng:
 
 vcf_stats:
     mem-per-cpu: 30G
-    partition: "fast"

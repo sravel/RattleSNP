@@ -4,10 +4,10 @@
 ################################
 # Input output data options
 DATA:
-    FASTQ: ""
+    FASTQ: "./data_test/fastq/"
     BAM: ""
     VCF: "./data_test/vcf/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz"
-    REFERENCE_FILE: ""
+    REFERENCE_FILE: "./data_test/FR1067_racon4.fasta"
     OUTPUT: "./data_test/output"
 
 PARAMS:
@@ -18,16 +18,16 @@ PARAMS:
 
 ################################
 # Pipeline tools activation
-FASTQC: false
+FASTQC: true
 CLEANING:
-    ATROPOS: false
+    ATROPOS: true
 MAPPING:
-    ACTIVATE: false
+    ACTIVATE: true
     TOOL: "BWA_MEM"         # Use BWA_MEM or BWA_SAMPE only
-    BUILD_STATS: false
-SNPCALLING: false
-FILTER: true
-RAXML: false
+    BUILD_STATS: true      # warning if true but mapping false, mapping automatically run
+SNPCALLING: true
+FILTER: true                # Must be true if want run raxml or raxml-ng
+RAXML: true
 RAXML_NG: true
 
 ### TODO post analyse tools like SNMF, RAXML, ...

@@ -32,8 +32,8 @@ cluster_config = rattlesnp.cluster_config
 ###############################################################################
 # dir and suffix
 fastq_dir = config["DATA"]["FASTQ"]
-bam_dir = config["DATA"]["BAM"]
-vcf_dir = config["DATA"]["VCF"]
+# bam_dir = config["DATA"]["BAM"]
+
 reference_file =  config["DATA"]["REFERENCE_FILE"]
 basename_reference = Path(reference_file).stem
 out_dir = config["DATA"]["OUTPUT"]
@@ -42,12 +42,7 @@ log_dir = f"{out_dir}LOGS/"
 # Change workdir to output path (slurm logs append on outdir)
 workdir:config["DATA"]["OUTPUT"]
 
-cleaning = config["CLEANING"]["ATROPOS"]
-fastqc = config["FASTQC"]
-SNPcalling =  config["SNPCALLING"]
-build_stats =  config["MAPPING"]["BUILD_STATS"]
-
-
+fastqc_activated = config["FASTQC"]
 
 # to lunch separator
 BWA_INDEX = ['amb','ann','bwt','pac','sa']
@@ -79,7 +74,7 @@ def get_fastq_file():
                     "fasta": reference_file,
                      "index": rules.bwa_index.output.index
                     }
-    if cleaning:
+    if rattlesnp.cleaning_activated:
         dico_mapping.update({
                     "R1" : rules.run_atropos.output.R1,
                     "R2" : rules.run_atropos.output.R2
@@ -95,30 +90,25 @@ def get_fastq_file():
 def output_final(wildcards):
     """FINAL RULE"""
     dico_final = {}
-    if cleaning:
+    if rattlesnp.cleaning_activated and not fastqc_activated:
         dico_final.update({
                     "atropos_files_R1" : expand(rules.run_atropos.output.R1, samples = rattlesnp.samples),
                     "atropos_files_R2" : expand(rules.run_atropos.output.R2, samples = rattlesnp.samples),
                 })
-    if fastqc:
+    if fastqc_activated:
         dico_final.update({
                     "fastQC_files_R1": expand(rules.run_fastqc.output.R1,samples=rattlesnp.samples),
                     "fastQC_files_R2": expand(rules.run_fastqc.output.R2,samples=rattlesnp.samples),
         })
-    if rattlesnp.mapping_activated:
+    if rattlesnp.mapping_activated and not rattlesnp.mapping_stats_activated:
         dico_final.update({
                     "bam": expand( f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai",samples=rattlesnp.samples),
         })
     if rattlesnp.mapping_stats_activated:
         dico_final.update({
-            "html": expand(f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai",
-                samples=rattlesnp.samples),
+                    "report": f"{out_dir}1_mapping/STATS/report.html"
         })
-    if build_stats:
-        dico_final.update({
-                    "report" : f"{out_dir}1_mapping/STATS/report.html",
-                })
-    if rattlesnp.calling_activated:
+    if rattlesnp.calling_activated and not rattlesnp.vcf_filter_activated:
         dico_final.update({
                     "vcf_file": f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz',
                     "report_vcf_raw": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html",vcf_suffix="_raw")
@@ -133,11 +123,11 @@ def output_final(wildcards):
         dico_final.update({
                     "report_vcf_user": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix="_user")
                 })
-    if rattlesnp.run_RAXML:
+    if rattlesnp.run_RAXML and rattlesnp.vcf_filter_activated:
         dico_final.update({
                     "RAXML": expand(f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
-    if rattlesnp.run_RAXML_NG:
+    if rattlesnp.run_RAXML_NG and rattlesnp.vcf_filter_activated:
         dico_final.update({
                     "RAXML_NG": expand(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.raxml.bestTree', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
                 })
@@ -220,8 +210,8 @@ rule run_fastqc:
     """Run fastqc for control data"""
     threads: get_threads('run_fastqc', 1)
     input:
-            R1 = rules.run_atropos.output.R1 if cleaning else f"{fastq_dir}{{samples}}_R1{rattlesnp.fastq_files_ext}",
-            R2 = rules.run_atropos.output.R2 if cleaning else f"{fastq_dir}{{samples}}_R2{rattlesnp.fastq_files_ext}"
+            R1 = rules.run_atropos.output.R1 if rattlesnp.cleaning_activated else f"{fastq_dir}{{samples}}_R1{rattlesnp.fastq_files_ext}",
+            R2 = rules.run_atropos.output.R2 if rattlesnp.cleaning_activated else f"{fastq_dir}{{samples}}_R2{rattlesnp.fastq_files_ext}"
     output:
             R1 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R1{rattlesnp.cleaning_tool}_fastqc.html",
             R2 = f"{out_dir}0_cleaning/FASTQC/{{samples}}_R2{rattlesnp.cleaning_tool}_fastqc.html"
@@ -303,8 +293,8 @@ rule run_bwa_aln:
     input:
             fasta = reference_file,
             index = rules.bwa_index.output.index,
-            R1 = f"{fastq_dir}{{samples}}_R1.fastq.gz" if not cleaning else rules.run_atropos.output.R1 ,
-            R2 = f"{fastq_dir}{{samples}}_R2.fastq.gz" if not cleaning else rules.run_atropos.output.R2
+            R1 = f"{fastq_dir}{{samples}}_R1.fastq.gz" if not rattlesnp.cleaning_activated else rules.run_atropos.output.R1 ,
+            R2 = f"{fastq_dir}{{samples}}_R2.fastq.gz" if not rattlesnp.cleaning_activated else rules.run_atropos.output.R2
     output:
             sai_R1 = temp(f"{out_dir}1_mapping/BWA_SAMPE/{{samples}}_R1.BWAALN.sai"),
             sai_R2 = temp(f"{out_dir}1_mapping/BWA_SAMPE/{{samples}}_R2.BWAALN.sai")
