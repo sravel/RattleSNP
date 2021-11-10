@@ -39,6 +39,9 @@ basename_reference = Path(reference_file).stem
 out_dir = config["DATA"]["OUTPUT"]
 log_dir = f"{out_dir}LOGS/"
 
+# Change workdir to output path (slurm logs append on outdir)
+workdir:config["DATA"]["OUTPUT"]
+
 cleaning = config["CLEANING"]["ATROPOS"]
 fastqc = config["FASTQC"]
 SNPcalling =  config["SNPCALLING"]
@@ -57,6 +60,8 @@ def get_threads(rule, default):
     """
     give threads or 'cpus-per-task from cluster_config rule : threads to SGE and cpus-per-task to SLURM
     """
+    print(rule)
+    print(cluster_config)
     if rule in cluster_config and 'threads' in cluster_config[rule]:
         return int(cluster_config[rule]['threads'])
     elif rule in cluster_config and 'cpus-per-task' in cluster_config[rule]:

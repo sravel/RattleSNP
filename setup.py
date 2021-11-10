@@ -45,14 +45,6 @@ def main():
         },
         include_package_data=True,
         python_requires=">=3.6",
-        # install_requires=[
-        #     'pandas',
-        #     'pysam',
-        #     'pysamstats',
-        #     'snakemake',
-        #     'pyyaml',
-        #     'biopython'
-        # ],
         options={
             'bdist_wheel': {'universal': True}
         },

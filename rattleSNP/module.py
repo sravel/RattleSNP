@@ -136,21 +136,22 @@ class RattleSNP(object):
     """
 
     def __init__(self, workflow, config):
-        # print(workflow.overwrite_clusterconfig)
-        # culebront_path = Path(workflow.snakefile).parent
         # workflow is availbale only in __init
-        self.snakefile = workflow.snakefile
+        self.snakefile = workflow.main_snakefile
 
         if not workflow.overwrite_configfiles:
             raise ValueError("ERROR RattleSNP: You need to use --configfile option to snakemake command line")
         else:
             self.path_config = workflow.overwrite_configfiles[0]
-        self.cluster_config = workflow.overwrite_clusterconfig
+        if not workflow.overwrite_clusterconfig:
+            self.cluster_config = load_configfile(rattleSNP.RATTLESNP_PROFILE.joinpath("cluster_config.yaml"))
+
         # self.cluster_config = load_configfile(culebront_path.joinpath("cluster_config.yaml"))
         self.tools_config = load_configfile(rattleSNP.RATTLESNP_TOOLS_PATH)
 
-        # print("\n".join(list(workflow.__dict__.keys())))
-        # print(workflow.__dict__)
+        # pprint.pprint("\n".join(list(workflow.__dict__.keys())))
+        # pprint.pprint(workflow.__dict__)
+        # exit()
 
         # --- Verification Configuration Files --- #
         self.config = config

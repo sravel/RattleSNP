@@ -28,7 +28,7 @@ MAPPING:
 SNPCALLING: false
 FILTER: true
 RAXML: false
-RAXML_NG: false
+RAXML_NG: true
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################
