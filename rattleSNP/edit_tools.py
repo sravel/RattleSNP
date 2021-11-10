@@ -15,6 +15,6 @@ def edit_tools(editor):
         os.system(cmd)
     else:
         user_tools_path.parent.mkdir(parents=True, exist_ok=True)
-        copyfile(rattleSNP.RATTLESNP_TOOLS_PATHT, user_tools_path)
+        copyfile(rattleSNP.RATTLESNP_TOOLS_PATH, user_tools_path)
         cmd = f"{editor} {user_tools_path}"
         os.system(cmd)

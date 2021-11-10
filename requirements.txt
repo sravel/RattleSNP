@@ -6,3 +6,5 @@ PyYAML~=5.3.1
 snakemake~=6.5.1
 setuptools~=45.2.0
 Click~=7.0
+rattleSNP~=0.0.1
+cookiecutter~=1.7.3

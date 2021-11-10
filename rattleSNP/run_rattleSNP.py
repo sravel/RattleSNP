@@ -10,7 +10,8 @@ def rattle_cli():
 rattle_cli.add_command(rattleSNP.run)
 rattle_cli.add_command(rattleSNP.runlocal)
 rattle_cli.add_command(rattleSNP.edit_tools)
-rattle_cli.add_command(rattleSNP.install)
+rattle_cli.add_command(rattleSNP.install_cluster)
+rattle_cli.add_command(rattleSNP.update)
 
 def main():
     rattle_cli()

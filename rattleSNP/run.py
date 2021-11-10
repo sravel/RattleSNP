@@ -3,7 +3,7 @@ from pathlib import Path
 import rattleSNP
 import os
 
-@click.command("run", short_help='run workflow on HPC')
+@click.command("run", short_help='Run workflow on HPC')
 @click.option('--config', '-c', type=click.Path(exists=True), required=True, help='Configuration file for run rattleSNP')
 @click.option('--clusterconfig', '-k', default=None, type=click.Path(exists=True), required=False, help='Overwrite profile clusterconfig file for run rattleSNP')
 @click.option('--profile', '-k', default=None, type=click.Path(exists=True), required=False, help='Path to snakemake profile for run rattleSNP')
@@ -52,7 +52,8 @@ def run(config, clusterconfig, profile, tools, additional, pdf):
         filegraph_cmd_snakemake = f"{cmd_snakemake_base} --filegraph | dot -Tpdf > schema_pipeline_files.pdf"
         os.system(filegraph_cmd_snakemake)
 
-@click.command("runlocal", short_help='run workflow on local computer (use singularity mandatory)')
+
+@click.command("runlocal", short_help='Run workflow on local computer (use singularity mandatory)')
 @click.option('--config', '-c', type=click.Path(exists=True), required=True, help='Configuration file for run rattleSNP')
 @click.option('--threads', '-t', default=1, type=int, required=True, help='number of threads')
 @click.option('--additional', '-a', default="", type=str, required=False, help='Additional snakemake command line arguments')

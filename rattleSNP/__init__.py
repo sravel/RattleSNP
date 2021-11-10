@@ -4,11 +4,11 @@ from pathlib import Path
 from .module import get_last_version, get_version
 from .run import run, runlocal
 from .edit_tools import edit_tools
-from .install import install
+from .install import install_cluster, update
 
 RATTLESNP_PATH = Path(__file__).resolve().parent.parent
 RATTLESNP_SNAKEFILE = RATTLESNP_PATH.joinpath("Snakefile")
-RATTLESNP_PROFILE = RATTLESNP_PATH.joinpath("IFB_profile")
+RATTLESNP_PROFILE = RATTLESNP_PATH.joinpath("default_profile")
 RATTLESNP_TOOLS_PATH = RATTLESNP_PATH.joinpath("tools_path.yaml")
 
 logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
