@@ -5,8 +5,7 @@
 # Input output data options
 DATA:
     FASTQ: "./data_test/fastq/"
-    BAM: ""
-    VCF: "./data_test/vcf/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz"
+    VCF: ""
     REFERENCE_FILE: "./data_test/FR1067_racon4.fasta"
     OUTPUT: "./data_test/output"
 

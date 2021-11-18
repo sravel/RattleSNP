@@ -4,7 +4,7 @@ from rattleSNP.global_variable import *
 import os
 
 
-@click.command("run_cluster", short_help='Run workflow on HPC')
+@click.command("run_cluster", short_help='Run workflow on HPC', context_settings=dict(ignore_unknown_options=True))
 @click.option('--config', '-c', type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=True, show_default=True, help='Configuration file for run rattleSNP')
 @click.option('--clusterconfig', '-cl', default=None, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Overwrite profile clusterconfig file for run rattleSNP')
 @click.option('--profile', '-p', default=RATTLESNP_PROFILE, type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Path to snakemake profile for run rattleSNP')
@@ -31,6 +31,7 @@ def run_cluster(config, clusterconfig, profile, tools, pdf, snakemake_other):
     click.secho(f'    Profile file: {profile}', fg='yellow')
 
     if tools:
+        RATTLESNP_ARGS_TOOLS_PATH.parent.mkdir(parents=True, exist_ok=True)
         copyfile(tools, RATTLESNP_ARGS_TOOLS_PATH)
     elif RATTLESNP_USER_TOOLS_PATH.exists():
         tools = RATTLESNP_USER_TOOLS_PATH
