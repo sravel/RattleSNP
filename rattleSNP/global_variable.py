@@ -1,6 +1,12 @@
 from pathlib import Path
+import sys
 
-RATTLESNP_PATH = Path(__file__).resolve().parent.parent
+# Hack for build docs with unspecified path install
+args = str(sys.argv)
+if "sphinx" in args:
+    RATTLESNP_PATH = Path("/Path/to/install/")
+else:
+    RATTLESNP_PATH = Path(__file__).resolve().parent.parent
 RATTLESNP_SNAKEFILE = RATTLESNP_PATH.joinpath("Snakefile")
 RATTLESNP_PROFILE = RATTLESNP_PATH.joinpath("default_profile")
 
