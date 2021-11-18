@@ -6,7 +6,7 @@ import os
 
 @click.command("run_cluster", short_help='Run workflow on HPC', context_settings=dict(ignore_unknown_options=True))
 @click.option('--config', '-c', type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=True, show_default=True, help='Configuration file for run rattleSNP')
-@click.option('--clusterconfig', '-cl', default=None, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Overwrite profile clusterconfig file for run rattleSNP')
+@click.option('--clusterconfig', '-cl', default=RATTLESNP_CLUSTER_CONFIG, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Overwrite profile clusterconfig file for run rattleSNP')
 @click.option('--profile', '-p', default=RATTLESNP_PROFILE, type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Path to snakemake profile for run rattleSNP')
 @click.option('--tools', '-t', default=RATTLESNP_TOOLS_PATH, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Path to tools_path.yaml for run rattleSNP')
 @click.option('--pdf', '-pdf', is_flag=True, required=False, default=False, show_default=True, help='run snakemake with --dag, --rulegraph and --filegraph')
@@ -20,17 +20,22 @@ def run_cluster(config, clusterconfig, profile, tools, pdf, snakemake_other):
         rattleSNP run_cluster -c config.yaml --dry-run --jobs 200
     """
     # get user arguments
-    click.secho(f'    Config file: {config}', fg='yellow')
+    click.secho(f'\n    Config file: {config}', fg='yellow')
 
-    if clusterconfig:
-        click.secho(f'    Cluster config file: {clusterconfig}', fg='yellow')
-        cmd_clusterconfig = f"--cluster-config {clusterconfig}"
+    if clusterconfig != RATTLESNP_CLUSTER_CONFIG.as_posix():
+        RATTLESNP_ARGS_CLUSTER_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+        copyfile(clusterconfig, RATTLESNP_ARGS_CLUSTER_CONFIG)
+        clusterconfig = clusterconfig
+    elif RATTLESNP_USER_CLUSTER_CONFIG.exists():
+        clusterconfig = RATTLESNP_USER_CLUSTER_CONFIG
     else:
-        cmd_clusterconfig = ""
+        clusterconfig = RATTLESNP_CLUSTER_CONFIG
+    cmd_clusterconfig = f"--cluster-config {clusterconfig}"
+    click.secho(f'    Cluster config file load: {clusterconfig}', fg='yellow')
 
     click.secho(f'    Profile file: {profile}', fg='yellow')
 
-    if tools:
+    if tools != RATTLESNP_TOOLS_PATH:
         RATTLESNP_ARGS_TOOLS_PATH.parent.mkdir(parents=True, exist_ok=True)
         copyfile(tools, RATTLESNP_ARGS_TOOLS_PATH)
     elif RATTLESNP_USER_TOOLS_PATH.exists():

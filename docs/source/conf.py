@@ -12,23 +12,9 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
-import sys
-import os
-import sphinx_rtd_theme
-
-sys.path.insert(0, os.path.abspath('../../'))
-# load own functions
-from rattleSNP import  get_version
-version_RattleSNP = get_version("../../")
-
-# The short X.Y version.
-version = version_RattleSNP
-# The full version, including alpha/beta/rc tags
-release = version_RattleSNP
 
 # -- Project information -----------------------------------------------------
 # General information about the project.
-project = 'RattleSNP'
 copyright = '2019-2021, S Ravel (CIRAD)'
 github_doc_root = 'https://github.com/sravel/RattleSNP/tree/master/docs/'
 issues_github_path = 'https://github.com/sravel/RattleSNP/issues'

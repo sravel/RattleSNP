@@ -62,18 +62,16 @@ def get_last_version():
         return epilogTools
 
 
-def get_version(RATTLESNP):
+def get_version():
     """Read VERSION file to know current version
-    Arguments:
-        RATTLESNP (path): Path to RattleSNP install
     Returns:
         version: actual version read on the VERSION file
     Examples:
-        >>> version = get_version("/path/to/install/RattleSNP")
+        >>> version = get_version()
         >>> print(version)
             1.3.0
     """
-    with open(Path(RATTLESNP).joinpath("VERSION"), 'r') as version_file:
+    with open(Path(__file__).resolve().parent.parent.joinpath("VERSION"), 'r') as version_file:
         return version_file.readline().strip()
 
 
@@ -137,17 +135,16 @@ class RattleSNP(object):
         # workflow is availbale only in __init
         self.snakefile = workflow.main_snakefile
         self.tools_config = None
+        self.cluster_config = None
 
         if not workflow.overwrite_configfiles:
             raise ValueError("ERROR RattleSNP: You need to use --configfile option to snakemake command line")
         else:
             self.path_config = workflow.overwrite_configfiles[0]
-            
-        if not workflow.overwrite_clusterconfig:
-            self.cluster_config = load_configfile(RATTLESNP_PROFILE.joinpath("cluster_config.yaml"))
-        else:
-            self.cluster_config = workflow.overwrite_clusterconfig
 
+        print(workflow.overwrite_clusterconfig)
+        exit()
+        self.load_tool_cluster_config()
         self.load_tool_configfile()
 
         ### USE FOR DEBUG
@@ -188,6 +185,15 @@ class RattleSNP(object):
         self.vcf_filter_activated = False
 
         self.__check_config_dic()
+
+    def load_tool_cluster_config(self):
+        if RATTLESNP_USER_CLUSTER_CONFIG.exists() and not RATTLESNP_ARGS_CLUSTER_CONFIG.exists():
+            self.tools_config = load_configfile(RATTLESNP_USER_CLUSTER_CONFIG)
+        elif RATTLESNP_ARGS_CLUSTER_CONFIG.exists():
+            self.tools_config = load_configfile(RATTLESNP_ARGS_CLUSTER_CONFIG)
+            RATTLESNP_ARGS_CLUSTER_CONFIG.unlink()
+        else:
+            self.tools_config = load_configfile(RATTLESNP_CLUSTER_CONFIG)
 
     def load_tool_configfile(self):
         if RATTLESNP_USER_TOOLS_PATH.exists() and not RATTLESNP_ARGS_TOOLS_PATH.exists():

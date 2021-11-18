@@ -9,7 +9,7 @@ from .global_variable import *
 
 logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
 
-__version__ = get_version(RATTLESNP_PATH)
+__version__ = get_version()
 
 __doc__ = """BLABLA"""
 
