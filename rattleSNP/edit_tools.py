@@ -1,20 +1,12 @@
 import click
-import os
-from pathlib import Path
 from shutil import copyfile
-import rattleSNP
+from rattleSNP.global_variable import *
 
 
 @click.command("edit_tools", short_help='Edit the tools version')
-@click.option('--editor', '-e', default="nano", type=click.Choice(['vi', 'vim', 'nano'], case_sensitive=False), prompt='Enter editor name', help='Editor name to mofify tools')
-def edit_tools(editor):
-    user_tools_path = Path("~/.config/RattlerSNP/tools_path.yaml").expanduser()
-
-    if user_tools_path.exists():
-        cmd = f"{editor} {user_tools_path.as_posix()}"
-        os.system(cmd)
-    else:
-        user_tools_path.parent.mkdir(parents=True, exist_ok=True)
-        copyfile(rattleSNP.RATTLESNP_TOOLS_PATH, user_tools_path)
-        cmd = f"{editor} {user_tools_path}"
-        os.system(cmd)
+def edit_tools():
+    if not RATTLESNP_USER_TOOLS_PATH.exists():
+        RATTLESNP_USER_TOOLS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        copyfile(RATTLESNP_TOOLS_PATH, RATTLESNP_USER_TOOLS_PATH)
+    click.edit(require_save=True, extension='.yaml', filename=RATTLESNP_USER_TOOLS_PATH)
+    click.secho(f"\n    Success install own tools_path.yaml on path '{RATTLESNP_USER_TOOLS_PATH}'\n    CulebrONT used it at default now !!", fg="yellow")

@@ -1,27 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from pathlib import Path
 from .module import get_last_version, get_version
-from .run import run, runlocal
+from .run import run_cluster, runlocal
 from .edit_tools import edit_tools
-from .install import install_cluster, update
+from .install import install_cluster
+from .global_variable import *
 
-RATTLESNP_PATH = Path(__file__).resolve().parent.parent
-RATTLESNP_SNAKEFILE = RATTLESNP_PATH.joinpath("Snakefile")
-RATTLESNP_PROFILE = RATTLESNP_PATH.joinpath("default_profile")
-RATTLESNP_TOOLS_PATH = RATTLESNP_PATH.joinpath("tools_path.yaml")
 
 logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
 
 __version__ = get_version(RATTLESNP_PATH)
 
-description_tools = f"""\b
-    Welcome to RattleSNP !
-    Created on November 2019
-    version: """+__version__+"""
+__doc__ = """BLABLA"""
+
+description_tools = f"""
+    Welcome to RattleSNP version: """+__version__+"""! Created on November 2019
     @author: Sebastien Ravel (CIRAD)
     @email: sebastien.ravel@cirad.fr
-    \b
+    
     #                       _.--....
     #              _....---;:'::' ^__/
     #            .' `'`___....---=-'`
@@ -36,8 +32,9 @@ description_tools = f"""\b
     #    \:   .:. ''' .:| .:, _:./':.|       O      o `OoO'o  `oO  `oO Oo `OoO'   `oooO'  O     `o o'
     #     '--.:::...---'\:'.:`':`':./
     #                    '-::..:::-'
-    \b
+    
     Please cite our github https://github.com/sravel/RattleSNP
     Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
     and GPLv3 Intellectual property belongs to CIRAD and authors.
-    """+get_last_version(__version__)
+    Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ 
+    """+get_last_version()

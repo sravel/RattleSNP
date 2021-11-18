@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# @package module.py
-# @author Sebastien Ravel
 
-##################################################
-# Modules
-import pysam
-from collections import defaultdict, OrderedDict
-import pandas as pd
-from pathlib import  Path
+from pathlib import Path
 from snakemake.io import load_configfile
 from snakemake.io import glob_wildcards
+from collections import defaultdict, OrderedDict
+import pysam
+import pandas as pd
 import yaml
 import pprint
 import re
 import os
+import click
 import rattleSNP
+from rattleSNP.global_variable import *
 
 ################################################
 # environment settings:
@@ -26,22 +24,23 @@ pd.set_option('display.max_colwidth', 500)
 pd.set_option('expand_frame_repr', True)
 # pd.options.display.width = None
 
-################################################
-# GLOBAL VARIABLES
-ALLOW_FASTQ_EXT = (".fastq",".fq",".fq.gz",".fastq.gz")
-AVAIL_CLEANING = ("ATROPOS", "FASTQC")
-AVAIL_MAPPING = ("BWA_MEM", "BWA_SAMPE")
 
 ################################################
 # GLOBAL functions
-def get_last_version(version_RattleSNP):
+def get_install_mode():
+    """detect install mode"""
+    if RATTLESNP_PATH.joinpath(".mode.txt").exists():
+        return RATTLESNP_PATH.joinpath(".mode.txt").open("r").readline()
+    else:
+        return "notInstall"
+
+
+def get_last_version():
     """Function for know the last version of RattleSNP in website
-    Arguments:
-        version_RattleSNP (str): the actual version of RattleSNP
     Returns:
         note: message if new version avail on the website
     Examples:
-        >>> mess = get_last_version("1.2.0")
+        >>> mess = get_last_version()
         >>> print(mess)
             Documentation avail at: https://RattleSNP.readthedocs.io/en/latest
             NOTE: The Latest version of RattleSNP 1.3.0 is available at https://github.com/sravel/RattleSNP/releases
@@ -50,17 +49,16 @@ def get_last_version(version_RattleSNP):
         from urllib.request import urlopen
         from re import search
         HTML = urlopen("https://github.com/sravel/RattleSNP/tags").read().decode('utf-8')
-        lastRelease = \
-        search('/sravel/RattleSNP/releases/tag/.*', HTML).group(0).split("/")[-1].split('"')[0]
-        epilogTools = """Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ \n"""
-        if version_RattleSNP != lastRelease:
-            if lastRelease < version_RattleSNP:
-                epilogTools += "\n** NOTE: This RattleSNP version is higher than the production version, you are using a dev version\n"
-            elif lastRelease > version_RattleSNP:
-                epilogTools += f"\nNOTE: The Latest version of RattleSNP {lastRelease} is available at https://github.com/sravel/RattleSNP/releases\n"
+        lastRelease = search('/sravel/RattleSNP/releases/tag/.*', HTML).group(0).split("/")[-1].split('"')[0]
+        epilogTools = ""
+        if rattleSNP.__version__ != lastRelease:
+            if lastRelease < rattleSNP.__version__:
+                epilogTools = click.style(f"\n    ** NOTE: This RattleSNP version is higher than the production version, you are using a dev version\n", fg="yellow", bold=True)
+            elif lastRelease > rattleSNP.__version__:
+                epilogTools = click.style(f"\n    NOTE: The Latest version of RattleSNP {lastRelease} is available at https://github.com/sravel/RattleSNP/releases\n",fg="yellow", underline=True)
         return epilogTools
     except Exception as e:
-        epilogTools = f"\n** ENABLE TO GET LAST VERSION, check internet connection\n{e}\n"
+        epilogTools = click.style(f"\n    ** ENABLE TO GET LAST VERSION, check internet connection\n{e}\n", fg="red")
         return epilogTools
 
 
@@ -138,17 +136,19 @@ class RattleSNP(object):
     def __init__(self, workflow, config):
         # workflow is availbale only in __init
         self.snakefile = workflow.main_snakefile
+        self.tools_config = None
 
         if not workflow.overwrite_configfiles:
             raise ValueError("ERROR RattleSNP: You need to use --configfile option to snakemake command line")
         else:
             self.path_config = workflow.overwrite_configfiles[0]
+            
         if not workflow.overwrite_clusterconfig:
-            self.cluster_config = load_configfile(rattleSNP.RATTLESNP_PROFILE.joinpath("cluster_config.yaml"))
+            self.cluster_config = load_configfile(RATTLESNP_PROFILE.joinpath("cluster_config.yaml"))
         else:
             self.cluster_config = workflow.overwrite_clusterconfig
 
-        self.tools_config = load_configfile(rattleSNP.RATTLESNP_TOOLS_PATH)
+        self.load_tool_configfile()
 
         ### USE FOR DEBUG
         # pprint.pprint("\n".join(list(workflow.__dict__.keys())))
@@ -188,6 +188,15 @@ class RattleSNP(object):
         self.vcf_filter_activated = False
 
         self.__check_config_dic()
+
+    def load_tool_configfile(self):
+        if RATTLESNP_USER_TOOLS_PATH.exists() and not RATTLESNP_ARGS_TOOLS_PATH.exists():
+            self.tools_config = load_configfile(RATTLESNP_USER_TOOLS_PATH)
+        elif RATTLESNP_ARGS_TOOLS_PATH.exists():
+            self.tools_config = load_configfile(RATTLESNP_ARGS_TOOLS_PATH)
+            RATTLESNP_ARGS_TOOLS_PATH.unlink()
+        else:
+            self.tools_config = load_configfile(RATTLESNP_TOOLS_PATH)
 
     def get_config_value(self, section, key=None, subsection=None):
         if key:

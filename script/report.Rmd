@@ -49,11 +49,11 @@ suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
 
 ```{r Importation des données, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 
-#file.quality <- snakemake@input$idxstats_resume
-file.quality <- "/media/work/RattleSNP-git/script/all_mapping_stats_resume.csv"
+file.quality <- snakemake@input$idxstats_resume
+# file.quality <- "/media/work/RattleSNP-git/script/all_mapping_stats_resume.csv"
 datatableQ <- read.table(file=file.quality, sep="\t", header=TRUE)
-#file.quality.depth <- snakemake@input$depth_resume
-file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
+file.quality.depth <- snakemake@input$depth_resume
+# file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
 datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
 ```
 
