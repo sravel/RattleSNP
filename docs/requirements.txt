@@ -1,3 +1,6 @@
 sphinx_copybutton
 sphinx_rtd_theme
 sphinx_click
+snakemake
+click
+cookiecutter
