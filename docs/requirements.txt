@@ -4,3 +4,6 @@ sphinx_click
 snakemake
 click
 cookiecutter
+pysamstats
+pandas
+PyYAML
