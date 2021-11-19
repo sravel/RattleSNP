@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from .module import get_last_version, get_version
 from .run import run_cluster, runlocal
 from .edit_tools import edit_tools
 from .install import install_cluster
+from .usefull_fonction import get_version, get_last_version
 from .global_variable import *
 
 
@@ -37,4 +37,4 @@ description_tools = f"""
     Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
     and GPLv3 Intellectual property belongs to CIRAD and authors.
     Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ 
-    """+get_last_version()
+    """+get_last_version(url="https://github.com/sravel/RattleSNP", current_version=__version__)

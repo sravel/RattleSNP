@@ -6,26 +6,28 @@ from io import open
 import os.path as osp
 from setuptools import setup, find_packages
 
-
 HERE = osp.abspath(osp.dirname(__file__))
 sys.path.insert(0, HERE)
-import rattleSNP  #no pep8 : import shall be done after adding setup to paths
+from rattleSNP.usefull_fonction import get_version  #no pep8 : import shall be done after adding setup to paths
 
+NAME = "RattleSNP"
+URL = "https://github.com/sravel/RattleSNP"
+version = get_version()
 
 def main():
     setup(
         # Project information
-        name=rattleSNP.__name__,
-        version=rattleSNP.__version__,
-        url="https://github.com/sravel/RattleSNP",
+        name=NAME,
+        version=version,
+        url=URL,
         project_urls={
-            "Bug Tracker": "https://github.com/sravel/RattleSNP/issues",
-            "Documentation": "https://RattleSNP.readthedocs.io/en/latest/",
-            "Source Code": "https://github.com/sravel/RattleSNP",
+            "Bug Tracker": f"{URL}/issues",
+            "Documentation": f"https://{NAME}.readthedocs.io/en/latest/",
+            "Source Code": URL
         },
-        download_url="https://github.com/sravel/RattleSNP/archive/{}.tar.gz".format(rattleSNP.__version__),
+        download_url=f"{URL}/archive/{version}.tar.gz",
         author="Ravel Sebastien",
-        description=rattleSNP.__doc__,
+        description="",
         long_description=open(osp.join(HERE, 'README.md'), encoding='utf-8').read(),
         long_description_content_type='text/x-rst',
         license='GPLv3',
@@ -33,9 +35,9 @@ def main():
         # docs compilation utils
         command_options={
             'build_sphinx': {
-                'project': ('setup.py', rattleSNP.__name__),
-                'version': ('setup.py', rattleSNP.__version__),
-                'release': ('setup.py', rattleSNP.__version__),
+                'project': ('setup.py', NAME),
+                'version': ('setup.py', version),
+                'release': ('setup.py', version),
                 'source_dir': ('setup.py', osp.join(HERE, r'docs', 'source')),
                 'build_dir': ('setup.py', osp.join(HERE, r'docs', 'build')),
             }},
@@ -71,7 +73,7 @@ def main():
                      'sphinx_click'],
         },
         entry_points={
-            rattleSNP.__name__: [rattleSNP.__name__ + " = __init__"],
+            NAME: [NAME + " = __init__"],
             'console_scripts': ["rattleSNP = rattleSNP.run_rattleSNP:main",
                                 "vcf2geno = rattleSNP.scripts.vcf2geno:main",
                                 "vcf2phylip = rattleSNP.scripts.vcf2phylip:main"]},

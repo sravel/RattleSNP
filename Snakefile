@@ -3,12 +3,9 @@
 
 from pathlib import Path
 import pprint
-from snakemake.logging import logger
-
 # load own functions
-import rattleSNP
-from rattleSNP.module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-from rattleSNP.module import RattleSNP
+from rattleSNP.rattleSNP_module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from rattleSNP.snakemake_module import RattleSNP
 
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
