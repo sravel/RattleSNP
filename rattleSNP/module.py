@@ -142,8 +142,6 @@ class RattleSNP(object):
         else:
             self.path_config = workflow.overwrite_configfiles[0]
 
-        print(workflow.overwrite_clusterconfig)
-        exit()
         self.load_tool_cluster_config()
         self.load_tool_configfile()
 
@@ -188,12 +186,12 @@ class RattleSNP(object):
 
     def load_tool_cluster_config(self):
         if RATTLESNP_USER_CLUSTER_CONFIG.exists() and not RATTLESNP_ARGS_CLUSTER_CONFIG.exists():
-            self.tools_config = load_configfile(RATTLESNP_USER_CLUSTER_CONFIG)
+            self.cluster_config = load_configfile(RATTLESNP_USER_CLUSTER_CONFIG)
         elif RATTLESNP_ARGS_CLUSTER_CONFIG.exists():
-            self.tools_config = load_configfile(RATTLESNP_ARGS_CLUSTER_CONFIG)
+            self.cluster_config = load_configfile(RATTLESNP_ARGS_CLUSTER_CONFIG)
             RATTLESNP_ARGS_CLUSTER_CONFIG.unlink()
         else:
-            self.tools_config = load_configfile(RATTLESNP_CLUSTER_CONFIG)
+            self.cluster_config = load_configfile(RATTLESNP_CLUSTER_CONFIG)
 
     def load_tool_configfile(self):
         if RATTLESNP_USER_TOOLS_PATH.exists() and not RATTLESNP_ARGS_TOOLS_PATH.exists():

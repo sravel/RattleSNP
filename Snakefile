@@ -1067,6 +1067,7 @@ rule run_raxml:
 rule run_raxml_ng:
     """run raxml"""
     threads: get_threads('run_raxml_ng', 1)
+    # threads: workflow.cores
     input:
             fasta = rules.vcf_to_fasta.output.fasta
     output:

@@ -9,7 +9,10 @@ import os
 @click.option('--clusterconfig', '-cl', default=RATTLESNP_CLUSTER_CONFIG, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Overwrite profile clusterconfig file for run rattleSNP')
 @click.option('--profile', '-p', default=RATTLESNP_PROFILE, type=click.Path(exists=True, dir_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Path to snakemake profile for run rattleSNP')
 @click.option('--tools', '-t', default=RATTLESNP_TOOLS_PATH, type=click.Path(exists=True, file_okay=True, readable=True, resolve_path=True), required=False, show_default=True, help='Path to tools_path.yaml for run rattleSNP')
-@click.option('--pdf', '-pdf', is_flag=True, required=False, default=False, show_default=True, help='run snakemake with --dag, --rulegraph and --filegraph')
+@click.option('--pdf', '-pdf', is_flag=True, required=False, default=False, show_default=True, help='run snakemake '
+                                                                                                    'with --dag, '
+                                                                                                    '--rulegraph and '
+                                                                                                    '--filegraph')
 @click.argument('snakemake_other', nargs=-1, type=click.UNPROCESSED)
 def run_cluster(config, clusterconfig, profile, tools, pdf, snakemake_other):
     """    
@@ -71,10 +74,9 @@ def runlocal(config, threads, additional, pdf):
     # get user arguments
     config = Path(config).resolve()
 
-    print(rattleSNP.description_tools)
     print(f'    Config file: {config}')
 
-    cmd_snakemake_base = f"snakemake --cores {threads} --show-failed-logs --printshellcmds -s {rattleSNP.RATTLESNP_SNAKEFILE} --configfile {config.as_posix()} {additional}"
+    cmd_snakemake_base = f"snakemake --cores {threads} --show-failed-logs --printshellcmds -s {RATTLESNP_SNAKEFILE} --configfile {config.as_posix()} {additional}"
     print(f"    {cmd_snakemake_base}\n")
 
     os.system(cmd_snakemake_base)

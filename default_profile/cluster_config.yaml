@@ -99,7 +99,7 @@ run_raxml:
     cpus-per-task: 20
 
 run_raxml_ng:
-    cpus-per-task: 10
+    cpus-per-task: 15
 
 vcf_stats:
     mem-per-cpu: 30G
