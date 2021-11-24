@@ -1,9 +1,11 @@
 from pathlib import Path
 
+INSTALL_PATH = Path(__file__).resolve().parent.parent
+
 def get_install_mode():
     """detect install mode"""
-    if Path(__file__).resolve().parent.parent.joinpath(".mode.txt").exists():
-        return Path(__file__).resolve().parent.parent.joinpath(".mode.txt").open("r").readline().strip()
+    if INSTALL_PATH.joinpath(".mode.txt").exists():
+        return INSTALL_PATH.joinpath(".mode.txt").open("r").readline().strip()
     else:
         return "notInstall"
 
@@ -12,11 +14,11 @@ def get_version():
     Returns:
         version: actual version read on the VERSION file
     Examples:
-        >>> version = get_version()
-        >>> print(version)
+        version = get_version()
+        print(version)
             1.3.0
     """
-    with open(Path(__file__).resolve().parent.parent.joinpath("VERSION"), 'r') as version_file:
+    with open(INSTALL_PATH.joinpath("VERSION"), 'r') as version_file:
         return version_file.readline().strip()
 
 def get_last_version(url, current_version):
@@ -40,6 +42,20 @@ def get_last_version(url, current_version):
         epilogTools = click.style(f"\n    ** ENABLE TO GET LAST VERSION, check internet connection\n{e}\n", fg="red")
         return epilogTools
 
+
+def command_required_option_from_option(require_name, require_map):
+    import click
+    class CommandOptionRequiredClass(click.Command):
+        def invoke(self, ctx):
+            require = ctx.params[require_name]
+            if require not in require_map:
+                raise click.ClickException(click.style(f"Unexpected value for --'{require_name}': {require}\n", fg="red"))
+            if ctx.params[require_map[require].lower()] is None:
+                raise click.ClickException(click.style(f"With {require_name}={require} must specify option --{require_map[require]} path/to/modules\n", fg="red"))
+            super(CommandOptionRequiredClass, self).invoke(ctx)
+    return CommandOptionRequiredClass
+
+
 def get_list_chromosome_names(fasta_file):
     """
             Return the list of sequence name on the fasta file.
@@ -61,8 +77,8 @@ def get_files_ext(path, extensions, add_ext=True):
         :class:`list`: List of  all extension found
 
     Examples:
-        >>> all_files, files_ext = get_files_ext("/path/to/fastq")
-        >>> print(files_ext)
+        all_files, files_ext = get_files_ext("/path/to/fastq")
+        print(files_ext)
             [".fastq"]
      """
     if not (extensions, (list, tuple)) or not extensions:

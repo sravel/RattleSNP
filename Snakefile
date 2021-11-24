@@ -580,7 +580,8 @@ rule picardTools_mark_duplicates:
     """apply picardTools_mark_duplicates on all bam"""
     threads: get_threads('picardTools_mark_duplicates', 1)
     input:
-            bam_file = rules.samtools_index.input.bam if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam"
+            bam_file = rules.samtools_index.input.bam if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam",
+            bai = rules.samtools_index.output.bai if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam.bai"
     output:
             bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
             txt_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"

@@ -1,34 +1,28 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import sys
-from io import open
-import os.path as osp
+from pathlib import Path
 from setuptools import setup, find_packages
-
-HERE = osp.abspath(osp.dirname(__file__))
-sys.path.insert(0, HERE)
-from rattleSNP.usefull_fonction import get_version  #no pep8 : import shall be done after adding setup to paths
 
 NAME = "RattleSNP"
 URL = "https://github.com/sravel/RattleSNP"
-version = get_version()
+CURRENT_PATH = Path(__file__).resolve().parent
+VERSION = CURRENT_PATH.joinpath("VERSION").open('r').readline().strip()
 
 def main():
     setup(
         # Project information
         name=NAME,
-        version=version,
+        VERSION=VERSION,
         url=URL,
         project_urls={
             "Bug Tracker": f"{URL}/issues",
             "Documentation": f"https://{NAME}.readthedocs.io/en/latest/",
             "Source Code": URL
         },
-        download_url=f"{URL}/archive/{version}.tar.gz",
+        download_url=f"{URL}/archive/{VERSION}.tar.gz",
         author="Ravel Sebastien",
         description="",
-        long_description=open(osp.join(HERE, 'README.md'), encoding='utf-8').read(),
+        long_description=CURRENT_PATH.joinpath('README.md').open("r", encoding='utf-8').read(),
         long_description_content_type='text/x-rst',
         license='GPLv3',
 
@@ -36,10 +30,10 @@ def main():
         command_options={
             'build_sphinx': {
                 'project': ('setup.py', NAME),
-                'version': ('setup.py', version),
-                'release': ('setup.py', version),
-                'source_dir': ('setup.py', osp.join(HERE, r'docs', 'source')),
-                'build_dir': ('setup.py', osp.join(HERE, r'docs', 'build')),
+                'VERSION': ('setup.py', VERSION),
+                'release': ('setup.py', VERSION),
+                'source_dir': ('setup.py', CURRENT_PATH.joinpath("docs","source")),
+                'build_dir': ('setup.py', CURRENT_PATH.joinpath("docs","build")),
             }},
 
         # Package information

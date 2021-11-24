@@ -1,0 +1,4 @@
+include default_profile/*
+include docs/*
+include script/*
+

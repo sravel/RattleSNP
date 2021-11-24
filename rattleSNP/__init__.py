@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 from .run import run_cluster, runlocal
 from .edit_tools import edit_tools
-from .install import install_cluster
+from .install import install_cluster#, create_envmodules
 from .usefull_fonction import get_version, get_last_version
 from .global_variable import *
 
 
 logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
+url = "https://github.com/sravel/RattleSNP"
 
 __version__ = get_version()
 
@@ -37,4 +38,49 @@ description_tools = f"""
     Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
     and GPLv3 Intellectual property belongs to CIRAD and authors.
     Documentation avail at: https://RattleSNP.readthedocs.io/en/latest/ 
-    """+get_last_version(url="https://github.com/sravel/RattleSNP", current_version=__version__)
+    """+get_last_version(url=url, current_version=__version__)
+
+
+MODULE_FILE = """
+#%Module1.0
+##
+
+## Required internal variables
+set     prefix       """+RATTLESNP_PATH.as_posix()+"""
+set     version      """+__version__+"""
+
+# check if install directory exist
+if {![file exists $prefix]} {
+    puts stderr "\t[module-info name] Load Error: $prefix does not exist"
+    break
+    exit 1
+}
+
+## List conflicting modules here
+conflict RattleSNP
+
+## List prerequisite modules here
+module load snakemake/5.19.2
+module load python/3.7
+module load graphviz/2.40.1
+module load r/4.1.0
+
+set		fullname	RattleSNP-"""+__version__+"""
+set		externalurl	"\n\t"""+url+"""\n"
+set		description	"\n\t"""+__doc__+""""
+
+## Required for "module help ..."
+proc ModulesHelp { } {
+  global description externalurl
+  puts stderr "Description - $description"
+  puts stderr "More Docs   - $externalurl"
+}
+
+## Required for "module display ..." and SWDB
+module-whatis   "loads the [module-info name] environment"
+
+## Software-specific settings exported to user environment
+
+prepend-path PATH $prefix
+
+"""

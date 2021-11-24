@@ -38,4 +38,3 @@ module-whatis   "loads the [module-info name] environment"
 ## Software-specific settings exported to user environment
 
 prepend-path PATH $prefix
-prepend-path RATTLESNP $prefix

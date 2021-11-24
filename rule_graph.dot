@@ -1,0 +1,118 @@
+digraph snakemake_dag {
+	compound=true;
+	concentrate=true;
+	constraint=true
+    rankdir=TB
+    color=invis;
+    graph[label="RattleSNP workflow", labelloc=t, fontsize=30, bgcolor=white, margin=0, clusterrank=local];
+    node[shape=box, fontname=sans, fontsize=12, penwidth=2, fixedsize=false, width=2, heigh=4];
+    edge[penwidth=2, color=grey];
+    subgraph cluster_fastqc {
+		bgcolor="#5ef38a19" label="Fastqc" fontsize=15;
+		1[label = "run_fastqc", color = "0.43 0.6 0.85", shape=box];
+	}
+	subgraph cluster_cleaning {
+		bgcolor="#5ef38a19" label="Cleaning" fontsize=15;
+		2[label = "run_atropos", color = "0.50 0.6 0.85", style="rounded"];
+	}
+	subgraph cluster_mapping {
+	   // {rank=same 19;6;}
+		bgcolor="#f48fff19" label="Mapping" fontsize=15;
+
+		6[label = "bwa_mem_sort_bam", color = "0.07 0.6 0.85", style="rounded", group="mapping"];
+		19[label = "picardTools\nmark_duplicates", color = "0.64 0.6 0.85", style="rounded", group="mapping"];
+	}
+	subgraph cluster_mapping_stats {
+		bgcolor="#5e81f319" label="Mapping stats" fontsize=15;
+		3[label = "report", color = "0.45 0.6 0.85", shape=box, group="mappingstats"];
+		4[label = "merge_bam_stats", color = "0.60 0.6 0.85", style="rounded", group="mappingstats"];
+		5[label = "bam_stats_to_csv", color = "0.52 0.6 0.85", style="rounded", group="mappingstats"];
+		9[label = "samtools_depth", color = "0.36 0.6 0.85", style="rounded", group="mappingstats"];
+		10[label = "merge_idxstats", color = "0.19 0.6 0.85", style="rounded", group="mappingstats"];
+		11[label = "samtools_idxstats", color = "0.26 0.6 0.85", style="rounded", group="mappingstats"];
+	}
+	subgraph cluster_SNP_calling {
+	    {rank=same 15;16}
+	    {rank=same 17;18}
+		bgcolor="#f3d55e19" label="SNP Calling" fontsize=15;
+		13[label = "vcf_stats", color = "0.10 0.6 0.85", style="rounded"];
+		14[label = "vcftools_filter", color = "0.24 0.6 0.85", style="rounded"];
+		15[label = "bcftools_concat", color = "0.00 0.6 0.85", style="rounded"];
+		16[label = "gatk\nGenotypeGVCFs_merge", color = "0.55 0.6 0.85", style="rounded"];
+		17[label = "gatk\nGenomicsDBImport", color = "0.62 0.6 0.85", style="rounded"];
+		18[label = "gatk\nHaplotypeCaller", color = "0.14 0.6 0.85", style="rounded"];
+	}
+	subgraph cluster_Filter {
+	   // {rank=min 12;13;14}
+		bgcolor="#f5000019" label="Filter" fontsize=15;
+		13[label = "vcf_stats", color = "0.10 0.6 0.85", style="rounded"];
+		14[label = "vcftools_filter", color = "0.24 0.6 0.85", style="rounded"];
+		12[label = "report_vcf", color = "0.02 0.6 0.85", shape=box];
+	}
+	subgraph cluster_PostSNP {
+		bgcolor="#5ef38a19" label="Post SNP" fontsize=15;
+    	22[label = "vcf_to_geno", color = "0.38 0.6 0.85", style="rounded"];
+    	23[label = "run_raxml", color = "0.31 0.6 0.85", style="rounded"];
+    	24[label = "vcf_to_fasta", color = "0.48 0.6 0.85", style="rounded"];
+    	25[label = "run_raxml_ng", color = "0.40 0.6 0.85", style="rounded"];
+	}
+
+    7[label = "bwa_index", color = "0.05 0.6 0.85",shape=hexagon];
+// 	0[label = "final", color = "0.33 0.6 0.85", style="rounded"];
+	8[label = "samtools_index", color = "0.29 0.6 0.85", shape=hexagon];
+	20[label = "create_sequence_dict", color = "0.17 0.6 0.85", shape=hexagon];
+	21[label = "create_sequence_fai", color = "0.12 0.6 0.85"shape=hexagon];
+
+// 	3 -> 0
+// 	12 -> 0
+// 	23 -> 0 [ltail="cluster_PostSNP", lhead="final"]
+// 	22 -> 0
+// 	1 -> 0
+	2 -> 1 [lhead="cluster_fastqc"]
+	4 -> 3
+	10 -> 3
+	5 -> 4
+	9 -> 5
+	2 -> 6 [lhead="cluster_mapping"]
+
+// 	BWA index
+	7 -> 6 [lhead="cluster_mapping"]
+
+// 	samtools index
+	8 -> 9 [lhead="cluster_mapping_stats"]
+	8 -> 6 [lhead="cluster_mapping"]
+
+// 	BWA mem
+    // stats
+// 	6 -> 9 [lhead="cluster_mapping_stats"]
+	6 -> 11 [lhead="cluster_mapping_stats"]
+
+// mappingstats
+
+	13 -> 12
+	14 -> 13
+	16 -> 15
+	11 -> 10
+	20 -> 18 [lhead="cluster_SNP_calling"]
+	21 -> 18 [lhead="cluster_SNP_calling"]
+// 	20 -> 19 [color="red"]
+// 	21 -> 19 [color="red"]
+	17 -> 16
+	18 -> 17
+	6 -> 19
+	14 -> 24 [lhead="cluster_PostSNP"]
+	14 -> 22
+	24 -> 23
+	24 -> 25
+	19 -> 15 [color="invis"]
+	19 -> 16 [color="invis"]
+	19 -> 17 [color="invis"]
+	19 -> 18 [lhead="cluster_SNP_calling"]
+// 	merge node
+	15 -> 14 [lhead="cluster_Filter"]
+// 	15 -> 13 [lhead="cluster_Filter", color="invis"]
+// 	15 -> 12 [lhead="cluster_Filter", color="invis"]
+    // 16 -> 14 [color="invis"]
+// 	17 -> 14 [color="invis"]
+// 	18 -> 14 [color="invis"]
+}            
