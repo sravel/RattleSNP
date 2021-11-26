@@ -10,6 +10,7 @@ else:
 RATTLESNP_SNAKEFILE = RATTLESNP_PATH.joinpath("Snakefile")
 RATTLESNP_PROFILE = RATTLESNP_PATH.joinpath("default_profile")
 
+RATTLESNP_CONFIG_PATH = RATTLESNP_PATH.joinpath("config.yaml")
 RATTLESNP_TOOLS_PATH = RATTLESNP_PATH.joinpath("tools_path.yaml")
 RATTLESNP_USER_TOOLS_PATH = Path("~/.config/RattleSNP/tools_path.yaml").expanduser()
 RATTLESNP_ARGS_TOOLS_PATH = Path("~/.config/RattleSNP/tools_path_args.yaml").expanduser()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from .run import run_cluster, runlocal
-from .edit_tools import edit_tools
+from .edit_files import edit_tools, create_config
 from .install import install_cluster#, create_envmodules
 from .usefull_fonction import get_version, get_last_version
 from .global_variable import *

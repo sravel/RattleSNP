@@ -17,7 +17,7 @@ elif get_install_mode() == "local":
 else:
     rattle_cli.add_command(rattleSNP.install_cluster)
     # rattle_cli.add_command(rattleSNP.create_envmodules)
-
+rattle_cli.add_command(rattleSNP.create_config)
 
 # rattle_cli.add_command(rattleSNP.run_cluster)
 # rattle_cli.add_command(rattleSNP.runlocal)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 from pathlib import Path
 from setuptools import setup, find_packages
 
@@ -8,11 +9,27 @@ URL = "https://github.com/sravel/RattleSNP"
 CURRENT_PATH = Path(__file__).resolve().parent
 VERSION = CURRENT_PATH.joinpath("VERSION").open('r').readline().strip()
 
+
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        if path not in [".git", "docs", "rattleSNP", ".snakemake", "RattleSNP.egg-info", "data_test"]:
+            for filename in filenames:
+                paths.append(os.path.join('..', path, filename))
+        return paths
+
+extra_files = package_files(CURRENT_PATH.as_posix())
+
+from pprint import pprint as pp
+
+# pp(extra_files)
+# exit()
+
 def main():
     setup(
         # Project information
         name=NAME,
-        VERSION=VERSION,
+        version=VERSION,
         url=URL,
         project_urls={
             "Bug Tracker": f"{URL}/issues",
@@ -21,8 +38,9 @@ def main():
         },
         download_url=f"{URL}/archive/{VERSION}.tar.gz",
         author="Ravel Sebastien",
+        author_email="sebastien.ravel@cirad.fr",
         description="",
-        long_description=CURRENT_PATH.joinpath('README.md').open("r", encoding='utf-8').read(),
+        long_description=CURRENT_PATH.joinpath('README.rst').open("r", encoding='utf-8').read(),
         long_description_content_type='text/x-rst',
         license='GPLv3',
 
@@ -37,12 +55,10 @@ def main():
             }},
 
         # Package information
+        use_scm_version=True,
+        setup_requires=['setuptools_scm'],
         packages=find_packages(),
-        package_data={
-            'rattleSNP': ['*.ini'],
-            'rattleSNP.fonts': ['*.ttf'],
-            'rattleSNP.pictures': ['*/*.png'],
-        },
+        # package_data={"rattleSNP": extra_files},
         include_package_data=True,
         python_requires=">=3.6",
         install_requires=[
@@ -87,9 +103,9 @@ def main():
             'Programming Language :: Python :: 3.9',
             'Natural Language :: English',
         ],
-        options={
-            'bdist_wheel': {'universal': True}
-        },
+        # options={
+        #     'bdist_wheel': {'universal': True}
+        # },
         zip_safe=False,  # Don't install the lib as an .egg zipfile
     )
 

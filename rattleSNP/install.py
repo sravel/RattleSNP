@@ -22,7 +22,7 @@ required_options = {
 @click.option('--create_envmodule', '-c', is_flag=True, required=False, default=False, show_default=True,
               help='add env module file for cluster')
 @click.option('--modules_dir', '-m', default=None,
-              type=click.Path(exists=False, dir_okay=True, readable=True, resolve_path=True),
+              type=click.Path(exists=False, dir_okay=True, file_okay=False, readable=True, resolve_path=True),
               required=False, show_default=True, help='Path to install module file', is_eager=True)
 def install_cluster(scheduler, bash_completion, create_envmodule, modules_dir):
     """Run installation for HPC cluster"""
