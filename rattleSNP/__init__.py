@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from .run import run_cluster, runlocal
-from .edit_files import edit_tools, create_config
-from .install import install_cluster#, create_envmodules
-from .usefull_fonction import get_version, get_last_version
+from .run import run_cluster
+from .edit_files import edit_tools, create_config, create_cluster_config
+from .install import install_cluster
+from .usefull_function import get_version, get_last_version
 from .global_variable import *
 
 
-logo = RATTLESNP_PATH.joinpath('SupplementaryFiles/RattleSNP_logo.png').as_posix()
+logo = RATTLESNP_PATH.joinpath('RattleSNP_logo.png').as_posix()
 url = "https://github.com/sravel/RattleSNP"
 
 __version__ = get_version()
@@ -60,8 +60,6 @@ if {![file exists $prefix]} {
 conflict RattleSNP
 
 ## List prerequisite modules here
-module load snakemake/5.19.2
-module load python/3.7
 module load graphviz/2.40.1
 module load r/4.1.0
 

@@ -6,7 +6,7 @@ from collections import OrderedDict
 import yaml
 import pprint
 from rattleSNP.global_variable import *
-from rattleSNP.usefull_fonction import *
+from rattleSNP.usefull_function import *
 ################################################
 # GLOBAL Class
 

@@ -11,12 +11,32 @@ Best SNP calling workflow
 
 .. toctree::
    :caption: About RattleSNP
-   :name: about_rattlesnp
+   :name: about_rattleSNP
+   :maxdepth: 2
+
+   ABOUT.rst
+
+.. toctree::
+   :caption: Install
+   :name: install
+   :maxdepth: 2
+
+   Install.rst
+
+
+.. toctree::
+   :caption: Defining Workflows
+   :name: defining_workflows
+   :maxdepth: 2
+
+   WORKFLOWS.rst
+
+.. toctree::
+   :caption: API
+   :name: api_rattleSNP
    :maxdepth: 2
 
    click.rst
-
-
 
 Indices and tables
 ==================

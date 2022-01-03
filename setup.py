@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 NAME = "RattleSNP"
 URL = "https://github.com/sravel/RattleSNP"
 CURRENT_PATH = Path(__file__).resolve().parent
-VERSION = CURRENT_PATH.joinpath("VERSION").open('r').readline().strip()
+VERSION = CURRENT_PATH.joinpath("rattleSNP", "VERSION").open('r').readline().strip()
 
 
 def package_files(directory):
@@ -48,17 +48,19 @@ def main():
         command_options={
             'build_sphinx': {
                 'project': ('setup.py', NAME),
-                'VERSION': ('setup.py', VERSION),
+                'version': ('setup.py', VERSION),
                 'release': ('setup.py', VERSION),
-                'source_dir': ('setup.py', CURRENT_PATH.joinpath("docs","source")),
-                'build_dir': ('setup.py', CURRENT_PATH.joinpath("docs","build")),
+                'source_dir': ('setup.py', CURRENT_PATH.joinpath("docs","source").as_posix()),
+                'build_dir': ('setup.py', CURRENT_PATH.joinpath("docs","build").as_posix()),
             }},
 
         # Package information
         use_scm_version=True,
         setup_requires=['setuptools_scm'],
         packages=find_packages(),
-        # package_data={"rattleSNP": extra_files},
+        package_data={
+            '': ['*'],
+        },
         include_package_data=True,
         python_requires=">=3.6",
         install_requires=[
@@ -75,7 +77,8 @@ def main():
             'argparse',
             'snakemake',
             'click>=8.0.3',
-            'cookiecutter'
+            'cookiecutter',
+            'tqdm'
         ],
         extras_require={
             'docs': ['sphinx_copybutton',
@@ -84,7 +87,7 @@ def main():
         },
         entry_points={
             NAME: [NAME + " = __init__"],
-            'console_scripts': ["rattleSNP = rattleSNP.run_rattleSNP:main",
+            'console_scripts': ["rattleSNP = rattleSNP.main:main",
                                 "vcf2geno = rattleSNP.scripts.vcf2geno:main",
                                 "vcf2phylip = rattleSNP.scripts.vcf2phylip:main"]},
 
@@ -96,6 +99,7 @@ def main():
             'workflow'
         ],
         classifiers=[
+            "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
             'Development Status :: 5 - Production/Stable',
             'Intended Audience :: Developers',
             'Intended Audience :: End Users/Desktop',
@@ -103,9 +107,9 @@ def main():
             'Programming Language :: Python :: 3.9',
             'Natural Language :: English',
         ],
-        # options={
-        #     'bdist_wheel': {'universal': True}
-        # },
+        options={
+            'bdist_wheel': {'universal': True}
+        },
         zip_safe=False,  # Don't install the lib as an .egg zipfile
     )
 

@@ -4,7 +4,7 @@
 from pathlib import Path
 import pprint
 # load own functions
-from rattleSNP.rattleSNP_module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from rattleSNP.snakemake_scripts.rattleSNP_module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
 from rattleSNP.snakemake_module import RattleSNP
 
 # GLOBAL VARIABLES

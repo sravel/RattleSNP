@@ -1,7 +1,8 @@
 from pathlib import Path
 from collections import defaultdict, OrderedDict
 
-def parse_idxstats(files_list = None, out_csv = None, sep="\t"):
+
+def parse_idxstats(files_list=None, out_csv=None, sep="\t"):
     from pathlib import Path
     from collections import defaultdict, OrderedDict
     import pandas as pd
@@ -24,7 +25,7 @@ def parse_idxstats(files_list = None, out_csv = None, sep="\t"):
         dataframe_mapping_stats.to_csv(out_csv_file, index=True, sep=sep)
 
 
-def check_mapping_stats(bam, out_csv, sep = "\t"):
+def check_mapping_stats(bam, out_csv, sep="\t"):
     from numpy import median, mean
     from pysamstats import load_coverage
     import pysam
