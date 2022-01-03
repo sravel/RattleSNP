@@ -1,54 +1,33 @@
-.. raw:: html
+.. image:: docs/source/_images/rattleSNP_logo.png
+   :target: docs/source/_images/rattleSNP_logo.png
+   :align: center
+   :alt: RattleSNP Logo
 
-   <!--![Culebront Logo](./SupplementaryFiles/Culebront-LOGO2.png)-->
+|PythonVersions| |SnakemakeVersions|
 
-Table of Contents
-=================
+.. contents:: Table of Contents
+    :depth: 2
 
-.. raw:: html
-
-   <!-- TOC depthFrom:2 depthTo:3 withLinks:1 updateOnSave:1 orderedList:0 -->
-
--  `About this package <#about-this-package>`__
--  `Installation <#installation>`__
--  `Running workflow <#running-workflow>`__
--  `Citation <#citation>`__
--  `License <#license>`__
-
-About this package
+About RattleSNP
 ==================
+
+**Homepage: https:/rattleSNP.readthedocs.io/en/latest/**
+
 
 The Best snakemake mapping pipeline !!!
 
-Need
+Authors
+=======
 
-pip install pysam biopython
-
-Installation
-============
-
--  Main Program: use python >= 3.7 and snakemake >= 5.7
-
-.. code:: ruby
-
-   #### Install or update snakemake workflow
-   git clone https://github.com/sravel/snake-Mapping.git
-
-Running workflow
-================
-
--  To run the pipeline:
-
-.. code:: ruby
-
-   BLABLA
-
-Citation
-========
-
-@author: Sebastien Ravel (CIRAD)
+* Sébastien RAVEL(CIRAD).
 
 License
 =======
+Licencied under `CeCill-C <http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_ and GPLv3.
 
-Licencied under CeCill-C and GPLv3
+Intellectual property belongs to CIRAD and authors.
+
+.. |PythonVersions| image:: https://img.shields.io/badge/python-3.7%2B-blue
+   :target: https://www.python.org/downloads
+.. |SnakemakeVersions| image:: https://img.shields.io/badge/snakemake-≥5.10.0-brightgreen.svg?style=flat
+   :target: https://snakemake.readthedocs.io
