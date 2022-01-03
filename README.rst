@@ -11,7 +11,7 @@
 About RattleSNP
 ==================
 
-**Homepage: https:/rattleSNP.readthedocs.io/en/latest/**
+**Homepage:** https:/rattleSNP.readthedocs.io/en/latest/
 
 
 The Best snakemake mapping pipeline !!!
