@@ -4,10 +4,10 @@
 ################################
 # Input output data options
 DATA:
-    FASTQ: "./data_test/fastq/"
+    FASTQ: "data_test_mapping/fastq/"
     VCF: ""
-    REFERENCE_FILE: "./data_test/FR1067_racon4.fasta"
-    OUTPUT: "./data_test/output"
+    REFERENCE_FILE: "data_test_mapping/reference/FR1067.fasta"
+    OUTPUT: "data_test_mapping/output"
 
 PARAMS:
     MITOCHONDRIAL_NAME : ""

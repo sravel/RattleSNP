@@ -39,9 +39,9 @@ docs/_templates/
 .snakemake
 
 # for dev
-.mode.txt
+rattleSNP/.mode.txt
 rattleSNP/default_profile
 data_test
 *.pdf
 *.dot
-test.yaml
+.tox

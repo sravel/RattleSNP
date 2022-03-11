@@ -1,15 +1,22 @@
-##############################
-# Location of various software
+## BUILD SINGULARITY IMAGES PATH
+## PLEASE FILL IN SINGULARITY IMAGES PATH IF YOU HAVE CHOSEN INSTALL CULEBRONT WITH ENV MODE SINGULARITY (option --env singularity)
+## PLEASE FILL IN "ENVMODULES" SECTION IF YOU HAVE CHOSEN INSTALL CULEBRONT WITH ENV MODE MODULES (option --env modules)
+## WARNING!!! DO NOT ERASE LINES OR COMMENT THEM !  è_é
+
+SINGULARITY:
+    REPORT : '{INSTALL_PATH}/containers/Singularity.report.sif'
+    TOOLS : '{INSTALL_PATH}/containers/Singularity.rattleSNP_tools.sif'
+
 MODULES:
-    "SAMTOOLS": "samtools/1.10"                  # use for filter reads and convert sam to bam
-    "PYTHON3": "python/3.7"                    # Python3 >=3.6 with require libraries
-    "BWA": "bwa/0.7.17"                         # for make the mapping
-    "ATROPOS": "python/3.7"                    # for call atropos
-    "FASTQC": "fastqc/0.11.9"                   # for control quality
-    "PICARDTOOLS": "picard/2.23.5"         # for control quality
-    "GATK4": "gatk4/4.2.0.0"                     # for control quality
-    "BCFTOOLS": "bcftools/1.10.2"                  # for contact vcf
-    "VCFTOOLS": "vcftools/0.1.16"    # for filter vcf
-    "R": "r/4.1.0"
+    "SAMTOOLS": "samtools"                  # use for filter reads and convert sam to bam
+    "PYTHON3": "python"                    # Python3 >=3.6 with require libraries
+    "BWA": "bwa"                         # for make the mapping
+    "ATROPOS": "python"                    # for call atropos
+    "FASTQC": "fastqc"                   # for control quality
+    "PICARDTOOLS": "picard"         # for control quality
+    "GATK4": "gatk4"                     # for control quality
+    "BCFTOOLS": "bcftools"                  # for contact vcf
+    "VCFTOOLS": "vcftools"    # for filter vcf
+    "R": "r"
     "RAXML": "raxml"
     "RAXML_NG": "raxml-ng"
