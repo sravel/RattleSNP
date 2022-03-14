@@ -73,9 +73,10 @@ def main():
             'numpy',
             'argparse',
             'snakemake',
+            'tqdm',
             'click>=8.0.3',
             'cookiecutter',
-            'tqdm'
+            'docutils < 0.18'
         ],
         extras_require={
             'dev': ['sphinx_copybutton',
