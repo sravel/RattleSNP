@@ -103,6 +103,7 @@ def run_local(config, threads, pdf, snakemake_other):
 
     """
     click.secho(f'    Config file: {config}', fg='yellow')
+    click.secho(f'    Tools config file: {USER_TOOLS_PATH}', fg='yellow')
 
     cmd_snakemake_base = f"snakemake --latency-wait 1296000 --cores {threads} --use-singularity --show-failed-logs --printshellcmds -s {SNAKEFILE} --configfile {config}  {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')

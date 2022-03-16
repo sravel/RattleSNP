@@ -4,8 +4,9 @@
 from pathlib import Path
 import pprint
 # load own functions
-from rattleSNP.snakemake_scripts.rattleSNP_module import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
-from rattleSNP.snakemake_module import RattleSNP
+from rattleSNP import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from rattleSNP import RattleSNP
+from rattleSNP.snakeWrapper import *
 
 # GLOBAL VARIABLES
 pp = pprint.PrettyPrinter(indent=4)
@@ -394,7 +395,8 @@ rule bwa_sampe_sort_bam:
         """
         (bwa sampe -r"{params.rg}" {params.other_options_bwa} {input.fasta} {input.sai_R1} {input.sai_R2} {input.R1} {input.R2} |
         samtools view -@ {threads} {params.other_options_samtools_view} |
-        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file};
+        samtools index -@ {threads} {output.bam_file}) 1>{log.output} 2>{log.error}
         """
 
 rule samtools_index:
@@ -435,7 +437,7 @@ rule samtools_idxstats:
     threads: get_threads('samtools_idxstats', 1)
     input:
         bam = rules.samtools_index.input.bam,
-        bai = rules.samtools_index.output.bai
+        # bai = rules.samtools_index.output.bai
     output:
         txt_file = f"{out_dir}1_mapping/STATS/idxstats/{{samples}}_IDXSTATS.txt"
     log:
@@ -494,7 +496,7 @@ rule samtools_depth:
     threads: get_threads('samtools_depth', 1)
     input:
         bam = rules.samtools_index.input.bam,
-        bai = rules.samtools_index.output.bai
+        # bai = rules.samtools_index.output.bai
     output:
         txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
     params:
@@ -580,8 +582,8 @@ rule merge_bam_stats:
 rule report:
     threads: get_threads('report', 1)
     input:
-         depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
-         idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
+        depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
+        idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
     output:
         report = f"{out_dir}1_mapping/STATS/report.html"
     log:
@@ -603,7 +605,7 @@ rule report:
             - LOG output: {{log.output}}
         """
     script:
-        """script/report.Rmd"""
+        f"{SNAKEMAKE_SCRIPTS}/report.Rmd"
 
 ###################################################################################
 rule picardTools_mark_duplicates:
@@ -611,7 +613,7 @@ rule picardTools_mark_duplicates:
     threads: get_threads('picardTools_mark_duplicates', 1)
     input:
         bam_file = rules.samtools_index.input.bam if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam",
-        bai = rules.samtools_index.output.bai if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam.bai"
+        # bai = rules.samtools_index.output.bai if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam.bai"
     output:
         bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
         txt_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
@@ -640,7 +642,7 @@ rule picardTools_mark_duplicates:
         tools_config["MODULES"]["PICARDTOOLS"]
     shell:
         """
-        picard MarkDuplicates {params.other_options} INPUT={input.bam_file} OUTPUT={output.bam_file} METRICS_FILE={output.txt_file} 1>{log.output} 2>{log.error}
+        picard MarkDuplicates {params.other_options} -INPUT {input.bam_file} -OUTPUT {output.bam_file} -METRICS_FILE {output.txt_file} 1>{log.output} 2>{log.error}
         """
 
 
@@ -746,12 +748,12 @@ rule gatk_HaplotypeCaller:
     envmodules:
         tools_config["MODULES"]["GATK4"]
     shell:
-         """
+        """
         gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
         {params.other_options} \
         --native-pair-hmm-threads {threads} \
         -L {params.interval} 1>{log.output} 2>{log.error}
-         """
+        """
 
 
 def get_gvcf_list(list):
@@ -795,12 +797,12 @@ rule gatk_GenomicsDBImport:
     envmodules:
         tools_config["MODULES"]["GATK4"]
     shell:
-         """
+        """
         gatk GenomicsDBImport --java-options "-Xmx{params.java_mem}" -R {input.reference} {params.str_join} \
         --genomicsdb-workspace-path {output.db} \
         {params.other_options} \
         -L {params.interval} 1>{log.output} 2>{log.error}
-         """
+        """
 
 rule gatk_GenotypeGVCFs_merge:
     """apply GenotypeGVCFs on all gvcf"""
@@ -949,7 +951,7 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        vcf2phylip -i {{input.vcf_file_filter}} -p -f
+        {SCRIPTS}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
         mv {{params.fasta}} {{output.fasta}}
         """
 
@@ -980,7 +982,7 @@ rule vcf_to_geno:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        vcf2geno --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
+        {SCRIPTS}/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}
         """
 
 ######################################
@@ -1076,7 +1078,7 @@ rule report_vcf:
             - LOG output: {{log.output}}
         """
     script:
-        """script/report_vcf.Rmd"""
+        f"{SNAKEMAKE_SCRIPTS}/report_vcf.Rmd"
 ######################################
 # Genetic tools like RaxML, SNMF, ...
 ######################################
@@ -1089,7 +1091,8 @@ rule run_raxml:
         tree = f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
         dir = directory(f'{out_dir}6_raxml/filter{{vcf_suffix}}/')
     params:
-        other_params = config["PARAMS_TOOLS"]["RAXML"]
+        other_params = config["PARAMS_TOOLS"]["RAXML"],
+        name = "{vcf_suffix}".replace('-','')
     log:
         error =  f'{log_dir}raxml/raxml{{vcf_suffix}}.e',
         output = f'{log_dir}raxml/raxml{{vcf_suffix}}.o'
@@ -1112,7 +1115,7 @@ rule run_raxml:
         tools_config["MODULES"]["RAXML"]
     shell:
         """
-        raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.other_params}
+        raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.name} {params.other_params}
         """
 
 

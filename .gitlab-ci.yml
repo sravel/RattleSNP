@@ -1,0 +1,37 @@
+stages:
+  - Install
+  - Test
+
+####### COMMON (Install) #######
+Install:
+    stage: Install
+    only:
+        - merge_requests
+        - master@sravel/RattleSNP
+        - web
+    image: sravel/rattleSNP_base:0.0.2
+    script:
+        - echo "Test to python 3.8"
+        - tox  --recreate -e py38 -vv
+    environment:
+        name: Install to python 3.8
+
+####### TEST INSTALL #######
+Test_config_CMSR.yaml:
+    stage: Test
+    extends: "Install"
+    only:
+        - merge_requests
+        - master@sravel/RattleSNP
+        - web
+    image: sravel/rattleSNP_base:0.0.2
+    script:
+        - echo "Test to python 3.8"
+        - tox  --recreate -e py38 -vv
+        - tox -e py38-run -vv -- ../../rattleSNP/install_files/config_test/config_CMSR.yaml
+    environment:
+        name: Test to run config_CMSR.yaml on python 3.8
+    needs:
+    - job: "Install"
+      artifacts: true
+

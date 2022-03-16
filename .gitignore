@@ -39,9 +39,12 @@ docs/_templates/
 .snakemake
 
 # for dev
+rattleSNP/_version.py
 rattleSNP/.mode.txt
 rattleSNP/default_profile
-data_test
+rattleSNP/containers/Singularity.rattleSNP_tools.sif
+rattleSNP/containers/Singularity.report.sif
+data_test_mapping
 *.pdf
 *.dot
 .tox

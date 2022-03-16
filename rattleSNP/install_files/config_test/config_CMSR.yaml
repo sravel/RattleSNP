@@ -4,7 +4,7 @@
 ################################
 # Input output data options
 DATA:
-    FASTQ: "data_test_mapping/fastq/"
+    FASTQ: "data_test_mapping/fastq_full/"
     VCF: ""
     REFERENCE_FILE: "data_test_mapping/reference/FR1067.fasta"
     OUTPUT: "data_test_mapping/output"
@@ -12,8 +12,8 @@ DATA:
 PARAMS:
     MITOCHONDRIAL_NAME : ""
     # The filter suffix to add on vcf filter in order to allow multiple filter
-    FILTER_SUFFIX: ["-Q30-DP5-MAF005-MISS07",
-                    "-Q30-DP20-MAF001-MISS05"]
+    FILTER_SUFFIX: ["-Q10-DP2-MISS09",
+                    "-Q30-DP10-MISS09"]
 
 ################################
 # Pipeline tools activation
@@ -41,11 +41,11 @@ PARAMS_TOOLS:
     SAMTOOLS_VIEW: "-bh -F 12"
     SAMTOOLS_SORT: ""
     SAMTOOLS_DEPTH: ""
-    PICARDTOOLS_MARK_DUPLICATES: "CREATE_INDEX=TRUE VALIDATION_STRINGENCY=SILENT"
+    PICARDTOOLS_MARK_DUPLICATES: "-CREATE_INDEX TRUE -VALIDATION_STRINGENCY SILENT"
     GATK_HAPLOTYPECALLER: "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
     GATK_GENOMICSDBIMPORT: ""
     GATK_GENOTYPEGVCFS: "-new-qual"
-    VCFTOOLS: ["--minDP 5 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.05 --max-missing 0.7",
-               "--minDP 20 --minQ 30 --remove-indels --recode --recode-INFO-all --maf 0.01 --max-missing 0.5"]
+    VCFTOOLS: ["--minDP 2 --minQ 10 --remove-indels --recode --recode-INFO-all --max-missing 0.9",
+               "--minDP 10 --minQ 30 --remove-indels --recode --recode-INFO-all --max-missing 0.9"]
     RAXML: "-m GTRGAMMAX -f a -x $RANDOM -# autoMRE -p 600"
     RAXML_NG: "--all --model GTR+G --tree pars{50},rand{50} --bs-trees 100 --seed $RANDOM"
