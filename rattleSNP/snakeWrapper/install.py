@@ -185,9 +185,9 @@ def test_install(data_dir):
             [(DATATEST_URL_FILES[1], download_zip.as_posix())], threads=1)
         for r in results:
             click.secho(r, fg="blue")
-        click.secho(f"    Extract archive {download_zip} to {data_dir.as_posix()}\n", fg="yellow")
-        unpack_archive(download_zip.as_posix(), data_dir.as_posix())
-        download_zip.unlink()
+    click.secho(f"    Extract archive {download_zip} to {data_dir.as_posix()}\n", fg="yellow")
+    unpack_archive(download_zip.as_posix(), data_dir.as_posix())
+    download_zip.unlink()
 
     # build command line
     click.secho(f"    Write command line to run workflow on data test:\n", fg="yellow")
