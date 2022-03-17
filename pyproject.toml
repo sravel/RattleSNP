@@ -32,34 +32,41 @@ envdir =
     py38: {toxworkdir}/py38
     py39: {toxworkdir}/py39
 commands =
-    culebrONT --help
+    rattleSNP --help
     bash -ec 'echo `pwd`'
     bash -ec 'CPDIR="./lib/python3.8/site-packages/rattleSNP/containers/"; DIR="/usr/local/rattleSNP/Containers"; if [[ -d $DIR ]]; then ls $DIR;  echo "copy Containers files in $DIR to $CPDIR"; ln -sf $DIR/* $CPDIR; fi'
-    culebrONT install_local
+    rattleSNP install_local
 
 
 [run]
 description = Run Installation rattleSNP install_local
 changedir={envdir}
+whitelist_externals =
+    bash
+    echo
+    mkdir
 skipsdist=True
+skip_install=True
 commands =
-    rattleSNP test_install -d test
+    mkdir -p data_test_mapping
+    bash -ec 'CPFILE="./data_test_mapping/data_test_rattleSNP.zip"; FILE="/usr/local/rattleSNP/data_test_mapping/data_test_rattleSNP.zip"; if [[ -f "$FILE" ]]; then ls $FILE;  echo "copy data_test files in $FILE to $CPFILE"; ln -sf $FILE $CPFILE; fi'
+    rattleSNP test_install -d data_test_mapping
     rattleSNP run_local --threads 8 --config {posargs} --singularity-args '--bind /builds:/builds'
 
 
 [testenv:py38-run]
-description = Run workflow pass on args to culebrONT
+description = Run workflow pass on args to rattleSNP
 envdir =
     py38: {toxworkdir}/py38
     py39: {toxworkdir}/py39
 changedir={envdir}
+whitelist_externals =
+    bash
+    echo
+    mkdir
+skipsdist=True
+skip_install=True
 commands = {[run]commands}
 
-
-#[testenv:py{38,39}-run]
-#description = Run workflow pass on args to rattleSNP
-#envdir = {toxworkdir}/py{38,39}-tests
-#skipsdist=True
-#commands = rattleSNP run_local --threads 8 --config {posargs}
 """
 
