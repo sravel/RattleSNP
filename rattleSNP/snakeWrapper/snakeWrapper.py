@@ -72,7 +72,7 @@ class SnakeWrapper(object):
             if path_value != "" and "/" in path_value:
                 if (not Path(path).exists() or not Path(path).is_dir()) and level2 not in ["OUTPUT"]:
                     raise NotADirectoryError(
-                        f'CONFIG FILE CHECKING FAIL : in section:{level1}, {f"subsection:{level2} directory:{level3}" if level3 else f"directory:{level3}"}, "{path}" {"does not exist" if not Path(path).exists() else "is not a valid directory"}')
+                        f'CONFIG FILE CHECKING FAIL : in section:{level1}, {f"subsection:{level2} directory:{level3}" if level3 else f"directory:{level2}"}, "{path}" {"does not exist" if not Path(path).exists() else "is not a valid directory"}')
                 else:
                     self.set_config_value(level1=level1, level2=level2, level3=level3, value=path)
             # it is not a path
