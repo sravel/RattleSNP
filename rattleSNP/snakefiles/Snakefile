@@ -550,7 +550,7 @@ rule bam_stats_to_csv:
             - LOG output: {{log.output}}
         """
     run :
-        check_mapping_stats(input.bam, output.csv_resume, sep="\t")
+        check_mapping_stats(input.bam, input.txt, output.csv_resume, sep="\t")
 
 rule merge_bam_stats:
     """merge all bam_stats_to_csv files"""
@@ -747,10 +747,10 @@ rule gatk_HaplotypeCaller:
         tools_config["MODULES"]["GATK4"]
     shell:
         """
-        gatk HaplotypeCaller  -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
+        (gatk HaplotypeCaller  -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
         {params.other_options} \
         --native-pair-hmm-threads {threads} \
-        -L {params.interval} 1>{log.output} 2>{log.error}
+        -L {params.interval}) 1>{log.output} 2>{log.error}
         """
 
 

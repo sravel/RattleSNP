@@ -24,10 +24,10 @@ MAPPING:
     ACTIVATE: true
     TOOL: "BWA_MEM"         # Use BWA_MEM or BWA_SAMPE only
     BUILD_STATS: true      # warning if true but mapping false, mapping automatically run
-SNPCALLING: true
-FILTER: true                # Must be true if want run raxml or raxml-ng
-RAXML: true
-RAXML_NG: true
+SNPCALLING: false
+FILTER: false                # Must be true if want run raxml or raxml-ng
+RAXML: false
+RAXML_NG: false
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################
@@ -38,7 +38,7 @@ PARAMS_TOOLS:
     BWA_ALN: ""
     BWA_SAMPE: ""
     BWA_MEM: ""
-    SAMTOOLS_VIEW: "-bh -F 12"
+    SAMTOOLS_VIEW: "-bh -f 2"
     SAMTOOLS_SORT: ""
     SAMTOOLS_DEPTH: ""
     PICARDTOOLS_MARK_DUPLICATES: "-CREATE_INDEX TRUE -VALIDATION_STRINGENCY SILENT"
