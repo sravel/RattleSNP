@@ -58,18 +58,18 @@ picardTools_mark_duplicates:
 
 gatk_HaplotypeCaller:
     cpus-per-task: 4
-    mem-per-cpu: 20G
+    mem-per-cpu: 40G
     partition: long
 
 gatk_GenomicsDBImport:
     cpus-per-task: 1
-    mem-per-cpu: 20G
+    mem-per-cpu: 40G
     partition: long
 
 
 gatk_GenotypeGVCFs_merge:
     cpus-per-task: 1
-    mem-per-cpu: 30G
+    mem-per-cpu: 40G
     partition: long
 
 create_sequence_dict:

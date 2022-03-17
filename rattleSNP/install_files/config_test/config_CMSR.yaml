@@ -42,9 +42,9 @@ PARAMS_TOOLS:
     SAMTOOLS_SORT: ""
     SAMTOOLS_DEPTH: ""
     PICARDTOOLS_MARK_DUPLICATES: "-CREATE_INDEX TRUE -VALIDATION_STRINGENCY SILENT"
-    GATK_HAPLOTYPECALLER: "--emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
-    GATK_GENOMICSDBIMPORT: ""
-    GATK_GENOTYPEGVCFS: "-new-qual"
+    GATK_HAPLOTYPECALLER: "--java-options '-Xmx40G' --emit-ref-confidence GVCF --output-mode EMIT_ALL_ACTIVE_SITES -ploidy 1"
+    GATK_GENOMICSDBIMPORT: "--java-options '-Xmx40G'"
+    GATK_GENOTYPEGVCFS: "--java-options '-Xmx40G' -new-qual"
     VCFTOOLS: ["--minDP 2 --minQ 10 --remove-indels --recode --recode-INFO-all --max-missing 0.9",
                "--minDP 10 --minQ 30 --remove-indels --recode --recode-INFO-all --max-missing 0.9"]
     RAXML: "-m GTRGAMMAX -f a -x $RANDOM -# autoMRE -p 600"

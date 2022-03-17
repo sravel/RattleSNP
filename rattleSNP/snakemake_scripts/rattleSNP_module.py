@@ -66,3 +66,12 @@ def merge_bam_stats_csv(csv_files, csv_file, sep="\t"):
         print(f"All CSV infos:\n{df}\n")
         df.to_csv(libsizeFile, index=False, sep=sep)
 
+
+def tsv_per_chromosome(gvcf_files, tsv_file, sep="\t"):
+    import pandas as pd
+    from pathlib import Path
+    dico = {(Path(file).stem.split('-')[0], file) for file in gvcf_files}
+    df = pd.DataFrame.from_dict(dico)
+    with open(tsv_file, "w") as out_tsv_file:
+        # print(f"Library size:\n{dataframe_mapping_stats}\n")
+        df.to_csv(out_tsv_file, index=False, header=False, sep=sep)

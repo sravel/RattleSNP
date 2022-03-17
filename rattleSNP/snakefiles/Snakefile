@@ -4,7 +4,7 @@
 from pathlib import Path
 import pprint
 # load own functions
-from rattleSNP import parse_idxstats, check_mapping_stats, merge_bam_stats_csv
+from rattleSNP import parse_idxstats, check_mapping_stats, merge_bam_stats_csv, tsv_per_chromosome
 from rattleSNP import RattleSNP
 from rattleSNP.snakeWrapper import *
 
@@ -722,7 +722,6 @@ rule gatk_HaplotypeCaller:
     output:
         vcf_file = f"{out_dir}2_snp_calling/GATK_HaplotypeCaller/{{samples}}-{{chromosomes}}_GATK4.gvcf"
     params:
-        java_mem="8g",          # TODO add argument to cluster_config
         interval = "{chromosomes}",
         other_options = config["PARAMS_TOOLS"]["GATK_HAPLOTYPECALLER"]
     log:
@@ -738,7 +737,6 @@ rule gatk_HaplotypeCaller:
         Output:
             - gvcf : {{output.vcf_file}}
         Others
-            - java mem : {{params.java_mem}}
             - Threads : {{threads}}
             - LOG error: {{log.error}}
             - LOG output: {{log.output}}
@@ -749,30 +747,45 @@ rule gatk_HaplotypeCaller:
         tools_config["MODULES"]["GATK4"]
     shell:
         """
-        gatk HaplotypeCaller --java-options "-Xmx{params.java_mem}" -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
+        gatk HaplotypeCaller  -R {input.reference} -I {input.bam_file} -O {output.vcf_file} \
         {params.other_options} \
         --native-pair-hmm-threads {threads} \
         -L {params.interval} 1>{log.output} 2>{log.error}
         """
 
 
-def get_gvcf_list(list):
-    gvcf_list = " -V ".join(list)
-    return f"-V {gvcf_list}"
+rule map_per_chromosome:
+    """format TSV for GenomicsDBImport on all gvcf by chromosomes to optimize"""
+    threads: get_threads('map_per_chromosome', 1)
+    input:
+        gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
+    output:
+        tsv = f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}-samples_map.tsv"
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - gvcf_list : {{input.gvcf_list}}
+        Output:
+            - tsv : {{output.tsv}}
+        Others
+            - Threads : {{threads}}
+        """
+    run:
+        tsv_per_chromosome(input.gvcf_list, output.tsv)
 
 
 rule gatk_GenomicsDBImport:
     """apply GenomicsDBImport on all gvcf by chromosomes """
     threads: get_threads('gatk_GenomicsDBImport', 1)
-    input: 	gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
+    input:
+        tsv_list = expand(rules.map_per_chromosome.output.tsv, chromosomes = "{chromosomes}"),
         reference = reference_file,
-        dict = rules.create_sequence_dict.output.dict
+        dict = rules.create_sequence_dict.output.dict,
     output:
         db = directory(f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}")
     params:
-        java_mem="20g",           # TODO add argument to cluster_config
         interval = "{chromosomes}",
-        str_join = get_gvcf_list(expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}")),
         other_options = config["PARAMS_TOOLS"]["GATK_GENOMICSDBIMPORT"]
     log:
         error =  f'{log_dir}gatk_GenomicsDBImport/{{chromosomes}}.e',
@@ -781,13 +794,12 @@ rule gatk_GenomicsDBImport:
         f"""
         Running {{rule}}
         Input:
-            - Bam : {{params.str_join}}
+            - tsv_list : {{input.tsv_list}}
             - Fasta : {{input.reference}}
             - Chromosome : {{params.interval}}
         Output:
             - db : {{output.db}}
         Others
-            - java mem : {{params.java_mem}}
             - Threads : {{threads}}
             - LOG error: {{log.error}}
             - LOG output: {{log.output}}
@@ -798,7 +810,7 @@ rule gatk_GenomicsDBImport:
         tools_config["MODULES"]["GATK4"]
     shell:
         """
-        gatk GenomicsDBImport --java-options "-Xmx{params.java_mem}" -R {input.reference} {params.str_join} \
+        gatk GenomicsDBImport -R {input.reference} --sample-name-map {input.tsv_list} \
         --genomicsdb-workspace-path {output.db} \
         {params.other_options} \
         -L {params.interval} 1>{log.output} 2>{log.error}
@@ -814,7 +826,6 @@ rule gatk_GenotypeGVCFs_merge:
     output:
         vcf_file = f'{out_dir}2_snp_calling/SplitByChromosome/All_samples_{{chromosomes}}_GenotypeGVCFs.vcf'
     params:
-        java_mem="30g",          # TODO add argument to cluster_config
         other_options = config["PARAMS_TOOLS"]["GATK_GENOTYPEGVCFS"]
     log:
         error =  f'{log_dir}gatk_GenotypeGVCFs_merge/{{chromosomes}}.e',
@@ -828,7 +839,6 @@ rule gatk_GenotypeGVCFs_merge:
         Output:
             - vcf : {{output.vcf_file}}
         Others
-            - java mem : {{params.java_mem}}
             - Threads : {{threads}}
             - LOG error: {{log.error}}
             - LOG output: {{log.output}}
@@ -839,7 +849,7 @@ rule gatk_GenotypeGVCFs_merge:
         tools_config["MODULES"]["GATK4"]
     shell:
         """
-        gatk GenotypeGVCFs --java-options "-Xmx{params.java_mem}" -R {input.reference} -V gendb://{input.db} -O {output.vcf_file} {params.other_options} 1>{log.output} 2>{log.error}
+        gatk GenotypeGVCFs -R {input.reference} -V gendb://{input.db} -O {output.vcf_file} {params.other_options} 1>{log.output} 2>{log.error}
         """
 
 rule bcftools_concat:
@@ -929,7 +939,8 @@ rule vcf_to_fasta:
     output:
         fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta'
     params:
-        fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta'
+        fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
+        folder = directory(f'{out_dir}4_snp_calling_filter/')
     log:
         error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.e',
         output = f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.o'
@@ -951,7 +962,7 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        {SCRIPTS}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f
+        {SCRIPTS}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f --output-folder {{params.folder}}
         mv {{params.fasta}} {{output.fasta}}
         """
 
@@ -1001,12 +1012,12 @@ rule vcf_stats:
     input:
         vcf_file_all = vcf_to_stats
     output:
-        freq = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.frq',
-        depth = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.idepth',
-        depth_mean = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.ldepth.mean',
-        qual = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lqual',
-        missing_ind = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.imiss',
-        miss = f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lmiss'
+        freq = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.frq'),
+        depth = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.idepth'),
+        depth_mean = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.ldepth.mean'),
+        qual = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lqual'),
+        missing_ind = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.imiss'),
+        miss = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lmiss')
     params:
         dirout = directory(f'{out_dir}3_all_snp_calling_stats/')
     log:
@@ -1092,7 +1103,7 @@ rule run_raxml:
         dir = directory(f'{out_dir}6_raxml/filter{{vcf_suffix}}/')
     params:
         other_params = config["PARAMS_TOOLS"]["RAXML"],
-        name = "{vcf_suffix}".replace('-','')
+        name = f"All_samples_GenotypeGVCFs_filter{{vcf_suffix}}".replace('-','')
     log:
         error =  f'{log_dir}raxml/raxml{{vcf_suffix}}.e',
         output = f'{log_dir}raxml/raxml{{vcf_suffix}}.o'
@@ -1115,7 +1126,7 @@ rule run_raxml:
         tools_config["MODULES"]["RAXML"]
     shell:
         """
-        raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.name} {params.other_params}
+        raxmlHPC-PTHREADS -T {threads} -s {input.fasta} -w {output.dir} -n {params.name} {params.other_params} 1> {log.output} 2>{log.error}
         """
 
 
@@ -1155,5 +1166,5 @@ rule run_raxml_ng:
         tools_config["MODULES"]["RAXML_NG"]
     shell:
         """
-        raxml-ng --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}
+        raxml-ng --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params} 1> {log.output} 2>{log.error}
         """
