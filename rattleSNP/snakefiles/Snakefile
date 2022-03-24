@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
-import pprint
+from pprint import pprint as pp
 # load own functions
-from rattleSNP import parse_idxstats, check_mapping_stats, merge_bam_stats_csv, tsv_per_chromosome
-from rattleSNP import RattleSNP
+import rattleSNP
+from rattleSNP import parse_idxstats, check_mapping_stats, merge_samtools_depth_csv, tsv_per_chromosome, parse_flagstat_multi_report
+from rattleSNP.snakemake_module import RattleSNP
 from rattleSNP.snakeWrapper import *
-
-# GLOBAL VARIABLES
-pp = pprint.PrettyPrinter(indent=4)
 
 # recovery basedir where RattleSNP was installed
 # logger.info(rattleSNP.description_tools)
@@ -21,7 +19,7 @@ cluster_config = rattlesnp.cluster_config
 
 # print(rattlesnp.export_use_yaml)
 # print for debug:
-# logger.debug(rattlesnp)
+pp(rattlesnp)
 # exit()
 # print(tools_config)
 
@@ -30,7 +28,6 @@ cluster_config = rattlesnp.cluster_config
 ###############################################################################
 # dir and suffix
 fastq_dir = config["DATA"]["FASTQ"]
-# bam_dir = config["DATA"]["BAM"]
 
 reference_file =  config["DATA"]["REFERENCE_FILE"]
 basename_reference = Path(reference_file).stem
@@ -112,10 +109,11 @@ def output_final(wildcards):
         })
     if rattlesnp.mapping_activated and not rattlesnp.mapping_stats_activated:
         dico_final.update({
-            "bam": expand( f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai",samples=rattlesnp.samples),
+            "bam": expand( f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam",samples=rattlesnp.samples),
         })
     if rattlesnp.mapping_stats_activated:
         dico_final.update({
+            "bam": expand(f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam",samples=rattlesnp.samples),
             "report": f"{out_dir}1_mapping/STATS/report.html"
         })
     if rattlesnp.calling_activated and not rattlesnp.vcf_filter_activated:
@@ -259,21 +257,19 @@ rule run_fastqc:
         """
 
 
-rule bwa_mem_sort_bam:
+rule bwa_mem_bam:
     """make bwa mem for all samples on reference"""
-    threads: get_threads('bwa_mem_sort_bam', 1)
+    threads: get_threads('bwa_mem_bam', 1)
     input:
         **get_fastq_file()
     output:
-        bam_file =  f"{out_dir}1_mapping/BWA_MEM/{{samples}}.bam"
+        bam_file =  temp(f"{out_dir}1_mapping/BWA_MEM/{{samples}}.bam")
     params:
         rg = f"@RG\\tID:{{samples}}\\tSM:{{samples}}\\tPL:Illumina",
         other_options_bwa = config["PARAMS_TOOLS"]["BWA_MEM"],
-        other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
-        other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
     log:
-        error =  f'{log_dir}bwa_mem_sort_bam/{{samples}}.e',
-        output = f'{log_dir}bwa_mem_sort_bam/{{samples}}.o'
+        error =  f'{log_dir}bwa_mem_bam/{{samples}}.e',
+        output = f'{log_dir}bwa_mem_bam/{{samples}}.o'
     message:
         f"""
         Running {{rule}}
@@ -285,8 +281,6 @@ rule bwa_mem_sort_bam:
             - Bam: {{output.bam_file}}
         Params:
             - other_options_bwa: {{params.other_options_bwa}}
-            - other_options_samtools_view: {{params.other_options_samtools_view}}
-            - other_options_samtools_sort: {{params.other_options_samtools_sort}}
         Others
             - Threads : {{threads}}
             - LOG error: {{log.error}}
@@ -300,10 +294,48 @@ rule bwa_mem_sort_bam:
     shell:
         """
         (bwa mem -t {threads} {input.fasta} {input.R1} {input.R2} -R '{params.rg}' |
-        samtools view -@ {threads} {params.other_options_samtools_view} |
-        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
+        samtools sort -@ {threads} -o {output.bam_file} ) 1>{log.output} 2>{log.error}
         """
 
+rule samtools_view_sort_bam:
+    """make samtools view and sort for all bam"""
+    threads: get_threads('samtools_view_sort_bam', 1)
+    input:
+        bam=f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+    output:
+        bam_file =  f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam",
+        bai= f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai"
+    params:
+        other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
+        other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
+    log:
+        error =  f'{log_dir}samtools_view_sort_bam/{{samples}}.e',
+        output = f'{log_dir}samtools_view_sort_bam/{{samples}}.o'
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - bam: {{input.bam}}
+        Output:
+            - Bam: {{output.bam_file}}
+        Params:
+            - other_options_samtools_view: {{params.other_options_samtools_view}}
+            - other_options_samtools_sort: {{params.other_options_samtools_sort}}
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    singularity:
+        tools_config['SINGULARITY']['TOOLS']
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+        """
+        (samtools view -@ {threads} {params.other_options_samtools_view} {input.bam} |
+        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} 
+        samtools index -@ {threads} {output.bam_file}) 1>{log.output} 2>{log.error}
+        """
 
 rule run_bwa_aln:
     """make bwa aln for all samples PE on reference"""
@@ -403,9 +435,9 @@ rule samtools_index:
     """index bam for use stats"""
     threads: get_threads('samtools_index', 1)
     input:
-        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam"
     output:
-        bai = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai"
+        bai = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam.bai"
     log:
         error =  f'{log_dir}samtools_index/{{samples}}.e',
         output = f'{log_dir}samtools_index/{{samples}}.o'
@@ -430,193 +462,18 @@ rule samtools_index:
         samtools index -@ {threads} {input.bam} 1>{log.output} 2>{log.error}
         """
 
-
-####### Stats
-rule samtools_idxstats:
-    """apply samtools idxstats on all bam"""
-    threads: get_threads('samtools_idxstats', 1)
-    input:
-        bam = rules.samtools_index.input.bam,
-        # bai = rules.samtools_index.output.bai
-    output:
-        txt_file = f"{out_dir}1_mapping/STATS/idxstats/{{samples}}_IDXSTATS.txt"
-    log:
-        error =  f'{log_dir}samtools_idxstats/{{samples}}.e',
-        output = f'{log_dir}samtools_idxstats/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}} for
-        Input:
-            - Bam : {{input.bam}}
-        Output:
-            - txt : {{output.txt_file}}
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    singularity:
-        tools_config['SINGULARITY']['TOOLS']
-    envmodules:
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        samtools idxstats -@ {threads} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
-        """
-
-
-rule merge_idxstats:
-    """merge all samtools idxstats files"""
-    threads : get_threads('merge_idxstats', 1)
-    input :
-        csv_resume = expand(rules.samtools_idxstats.output.txt_file , samples = rattlesnp.samples)
-    output :
-        csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_resume.csv", category="Resume mapping info's")
-    log:
-        error =  f'{log_dir}merge_idxstats/all_mapping_stats_resume.e',
-        output = f'{log_dir}merge_idxstats/all_mapping_stats_resume.o'
-    message:
-        f"""
-        Running {{rule}} for
-        Input:
-            - CSV_files : {{input.csv_resume}}
-        Output:
-            - Merge CSV : {{output.csv_resume_merge}}
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run :
-        parse_idxstats(input.csv_resume, output.csv_resume_merge, sep="\t")
-
-########################## STATS BAM
-rule samtools_depth:
-    """apply samtools depth on all bam SE end PE"""
-    threads: get_threads('samtools_depth', 1)
-    input:
-        bam = rules.samtools_index.input.bam,
-        # bai = rules.samtools_index.output.bai
-    output:
-        txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
-    params:
-        other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
-    log:
-        error =  f'{log_dir}samtools_depth/{{samples}}.e',
-        output = f'{log_dir}samtools_depth/{{samples}}.o'
-    message:
-        f"""
-        Execute {{rule}} for
-        Input:
-            - Bam : {{input.bam}}
-        Output:
-            - txt : {{output.txt_file}}
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    singularity:
-        tools_config['SINGULARITY']['TOOLS']
-    envmodules:
-        tools_config["MODULES"]["SAMTOOLS"]
-    shell:
-        """
-        samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
-        """
-
-rule bam_stats_to_csv:
-    """build csv with mean depth, median depth and mean coverage for all bam"""
-    threads : get_threads('bam_stats_to_csv', 1)
-    input :
-        bam = rules.samtools_index.input.bam,
-        bai = rules.samtools_index.output.bai,
-        txt = rules.samtools_depth.output.txt_file
-    output :
-        csv_resume = temp(f'{out_dir}1_mapping/STATS/depth/{{samples}}.csv')
-    log:
-        error =  f'{log_dir}bam_stats_to_csv/{{samples}}.e',
-        output = f'{log_dir}bam_stats_to_csv/{{samples}}.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - Bam : {{input.bam}}
-        Output:
-            - CSV : temp({{output.csv_resume}})
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run :
-        check_mapping_stats(input.bam, input.txt, output.csv_resume, sep="\t")
-
-rule merge_bam_stats:
-    """merge all bam_stats_to_csv files"""
-    threads : get_threads('merge_bam_stats', 1)
-    input :
-        csv_resume = expand(rules.bam_stats_to_csv.output.csv_resume , samples = rattlesnp.samples)
-    output :
-        csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping info's")
-    log:
-        error =  f'{log_dir}merge_bam_stats/mergeResume.e',
-        output = f'{log_dir}merge_bam_stats/mergeResume.o'
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - CSV list : {{input.csv_resume}}
-        Output:
-            - CSV : temp({{output.csv_resume_merge}})
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    run :
-        merge_bam_stats_csv(input.csv_resume, output.csv_resume_merge, sep="\t")
-
-
-
-rule report:
-    threads: get_threads('report', 1)
-    input:
-        depth_resume = rules.merge_bam_stats.output.csv_resume_merge,
-        idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
-    output:
-        report = f"{out_dir}1_mapping/STATS/report.html"
-    log:
-        error =  f'{log_dir}report/report.e',
-        output = f'{log_dir}report/report.o'
-    # envmodules:
-        # tools_config["MODULES"]["R"]
-    message:
-        f"""
-        Running {{rule}}
-        Input:
-            - csv : {{input.depth_resume}}
-            - csv : {{input.idxstats_resume}}
-        Output:
-            - report : {{output.report}}
-        Others
-            - Threads : {{threads}}
-            - LOG error: {{log.error}}
-            - LOG output: {{log.output}}
-        """
-    script:
-        f"{SNAKEMAKE_SCRIPTS}/report.Rmd"
+################################ ASSEMBLY ####################################
+include: f"{INSTALL_PATH}/snakefiles/mapping_stat.snake"
 
 ###################################################################################
 rule picardTools_mark_duplicates:
     """apply picardTools_mark_duplicates on all bam"""
     threads: get_threads('picardTools_mark_duplicates', 1)
     input:
-        bam_file = rules.samtools_index.input.bam if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam",
-        # bai = rules.samtools_index.output.bai if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam.bai"
+        bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam" if rattlesnp.mapping_tool_activated else f"{rattlesnp.bam_path}{{samples}}.bam",
     output:
-        bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
-        txt_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
+        bam_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated if rattlesnp.mapping_tool_activated else 'mapped'}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.bam",
+        txt_file = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated if rattlesnp.mapping_tool_activated else 'mapped'}/mark-duplicates/{{samples}}_picardTools-mark-duplicates.metrics"
 
     params:
         other_options = config["PARAMS_TOOLS"]["PICARDTOOLS_MARK_DUPLICATES"]
@@ -760,7 +617,7 @@ rule map_per_chromosome:
     input:
         gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
     output:
-        tsv = f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB_{{chromosomes}}-samples_map.tsv"
+        tsv = f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB-{{chromosomes}}-map.tsv"
     message:
         f"""
         Running {{rule}}

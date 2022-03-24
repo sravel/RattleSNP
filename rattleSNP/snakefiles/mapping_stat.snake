@@ -1,0 +1,176 @@
+###############################################################
+# samtools flagstat
+rule samtools_flagstat:
+    """apply samtools flagstats on all bam"""
+    threads: get_threads('samtools_flagstat', 1)
+    input:
+        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+    output:
+        txt_file = f"{out_dir}1_mapping/STATS/flagstat/{{samples}}_flagstat.txt"
+    log:
+        error =  f'{log_dir}samtools_flagstat/{{samples}}.e',
+        output = f'{log_dir}samtools_flagstat/{{samples}}.o'
+    message:
+        f"""
+        Running {{rule}} for
+        Input:
+            - Bam : {{input.bam}}
+        Output:
+            - txt : {{output.txt_file}}
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    singularity:
+        tools_config['SINGULARITY']['TOOLS']
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+        """
+        samtools flagstat -@ {threads} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+        """
+
+rule merge_flagstat:
+    """merge all samtools flagstat files"""
+    threads : get_threads('merge_flagstat', 1)
+    input :
+        csv_resume = expand(rules.samtools_flagstat.output.txt_file , samples = rattlesnp.samples)
+    output :
+        csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_flagstat.csv", category="Resume mapping info's")
+    log:
+        error =  f'{log_dir}merge_idxstats/all_mapping_stats_flagstat.e',
+        output = f'{log_dir}merge_idxstats/all_mapping_stats_flagstat.o'
+    message:
+        f"""
+        Running {{rule}} for
+        Input:
+            - CSV_files : {{input.csv_resume}}
+        Output:
+            - Merge CSV : {{output.csv_resume_merge}}
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    run :
+        parse_flagstat_multi_report(input.csv_resume, output.csv_resume_merge, sep="\t")
+
+###############################################################
+# Samtools depth
+rule samtools_depth:
+    """apply samtools depth on all bam SE end PE"""
+    threads: get_threads('samtools_depth', 1)
+    input:
+        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+    output:
+        txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
+    params:
+        other_options = config["PARAMS_TOOLS"]["SAMTOOLS_DEPTH"]
+    log:
+        error =  f'{log_dir}samtools_depth/{{samples}}.e',
+        output = f'{log_dir}samtools_depth/{{samples}}.o'
+    message:
+        f"""
+        Execute {{rule}} for
+        Input:
+            - Bam : {{input.bam}}
+        Output:
+            - txt : {{output.txt_file}}
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    singularity:
+        tools_config['SINGULARITY']['TOOLS']
+    envmodules:
+        tools_config["MODULES"]["SAMTOOLS"]
+    shell:
+        """
+        samtools depth {params.other_options} {input.bam} | tee {output.txt_file} 1>{log.output} 2>{log.error}
+        """
+
+rule samtools_depth_to_csv:
+    """build csv with mean depth, median depth and mean coverage for all bam"""
+    threads : get_threads('samtools_depth_to_csv', 1)
+    input :
+        txt = rules.samtools_depth.output.txt_file,
+        ref = rules.bwa_index.input.fasta
+    output :
+        csv_resume = temp(f'{out_dir}1_mapping/STATS/depth/{{samples}}.csv')
+    log:
+        error =  f'{log_dir}samtools_depth_to_csv/{{samples}}.e',
+        output = f'{log_dir}samtools_depth_to_csv/{{samples}}.o'
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - reference : {{input.ref}}
+            - txt : {{input.txt}}
+        Output:
+            - CSV : temp({{output.csv_resume}})
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    run :
+        check_mapping_stats(input.ref, input.txt, output.csv_resume, sep="\t")
+
+rule merge_samtools_depth_stats:
+    """merge all bam_stats_to_csv files"""
+    threads : get_threads('merge_samtools_depth_stats', 1)
+    input :
+        csv_resume = expand(rules.samtools_depth_to_csv.output.csv_resume , samples = rattlesnp.samples)
+    output :
+        csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping info's")
+    log:
+        error =  f'{log_dir}merge_samtools_depth_stats/mergeResume.e',
+        output = f'{log_dir}merge_samtools_depth_stats/mergeResume.o'
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - CSV list : {{input.csv_resume}}
+        Output:
+            - CSV : temp({{output.csv_resume_merge}})
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    run :
+        merge_samtools_depth_csv(input.csv_resume, output.csv_resume_merge, sep="\t")
+
+###############################################################
+# report
+rule report:
+    threads: get_threads('report', 1)
+    input:
+        depth_resume = rules.merge_samtools_depth_stats.output.csv_resume_merge,
+        flagstat_resume = rules.merge_flagstat.output.csv_resume_merge,
+        # idxstats_resume = rules.merge_idxstats.output.csv_resume_merge
+    output:
+        report = f"{out_dir}1_mapping/STATS/report.html"
+    log:
+        error =  f'{log_dir}report/report.e',
+        output = f'{log_dir}report/report.o'
+    # envmodules:
+        # tools_config["MODULES"]["R"]
+    message:
+        f"""
+        Running {{rule}}
+        Input:
+            - flagstat_resume : {{input.flagstat_resume}}
+            - depth_resume : {{input.depth_resume}}
+        Output:
+            - report : {{output.report}}
+        Others
+            - Threads : {{threads}}
+            - LOG error: {{log.error}}
+            - LOG output: {{log.output}}
+        """
+    script:
+        f"{SNAKEMAKE_SCRIPTS}/report.Rmd"
+

@@ -36,6 +36,7 @@ class RattleSNP(SnakeWrapper):
         self.samples = []
         self.run_RAXML = False
         self.run_RAXML_NG = False
+        self.reference = None
 
         self.CHROMOSOMES = []
         self.CHROMOSOMES_WITHOUT_MITO = []
@@ -100,49 +101,53 @@ class RattleSNP(SnakeWrapper):
         """Configuration file checking"""
         # check output mandatory directory
         self._check_dir_or_string(level1="DATA", level2="OUTPUT")
+        self.reference = self.get_config_value('DATA', 'REFERENCE_FILE')
+        self.bam_path = self.get_config_value(level1="DATA", level2="BAM")
+        self.vcf_path = self.get_config_value(level1="DATA", level2="VCF")
 
         # check cleaning activation
         self.list_cleaning_tool_activated = self.__build_tools_activated("CLEANING", AVAIL_CLEANING)
         if len(self.list_cleaning_tool_activated) > 0:
             self.cleaning_tool = "_"+self.list_cleaning_tool_activated[0]
             self.cleaning_activated = True
+            self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE", mandatory=["CLEANING"])
         elif len(self.list_cleaning_tool_activated) > 1:
             raise ValueError(f'CONFIG FILE CHECKING FAIL for section "CLEANING": please activate only one cleaning tool avail\n')
 
         # check mapping activation, if not use folder name to set self.mapping_tool_activated instead of mapping tool
         self.mapping_activated = var_2_bool(tool="MAPPING", key="ACTIVATE", to_convert=self.get_config_value("MAPPING", "ACTIVATE"))
+        self.mapping_stats_activated = var_2_bool(tool="MAPPING", key="BUILD_STATS", to_convert=self.get_config_value("MAPPING", "BUILD_STATS"))
         if self.mapping_activated:
-            self.mapping_stats_activated = var_2_bool(tool="MAPPING", key="BUILD_STATS", to_convert=self.get_config_value("MAPPING", "BUILD_STATS"))
             self.mapping_tool_activated = self.get_config_value("MAPPING", "TOOL")
+            self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE", mandatory=[self.mapping_tool_activated])
             if self.mapping_tool_activated not in AVAIL_MAPPING:
                 raise ValueError(f'CONFIG FILE CHECKING FAIL for section "MAPPING" key "TOOL": {self.mapping_tool_activated} not avail on RattleSNP\n')
+        elif self.mapping_stats_activated:
+            raise ValueError(f'CONFIG FILE CHECKING FAIL for section "MAPPING" key "BUILD_STATS" is "True" but no mapping activate, please change "ACTIVATE" to "True"\n')
 
         # if cleaning or mapping check fastq path and
         if self.cleaning_activated or self.mapping_activated:
             self._check_dir_or_string(level1="DATA", level2="FASTQ")
             self.__check_fastq_files()
-            self.samples, = glob_wildcards(f"{self.fastq_path}{{fastq}}_R1{self.fastq_files_ext}", followlinks=True)
+            self.samples, = glob_wildcards(f"{self.fastq_path}{{fastq,[^/]+}}_R1{self.fastq_files_ext}", followlinks=True)
             for sample in self.samples:
                 if not Path(f"{self.fastq_path}{sample}_R2{self.fastq_files_ext}").exists():
                     ValueError(f"DATA CHECKING FAIL : The samples '{sample}' are single-end, please only use paired data: \n")
-            # check reference file
-            self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE")
+            self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE", mandatory=[])
 
         # check SNP calling activation:
         self.calling_activated = var_2_bool(tool="SNPCALLING", key="", to_convert=self.get_config_value(level1="SNPCALLING"))
 
         if not self.mapping_activated and self.calling_activated:
             self._check_dir_or_string(level1="DATA", level2="BAM")
-            self.bam_path = self.get_config_value(level1="DATA", level2="BAM")
-            # self.mapping_tool_activated = Path(self.bam_path).stem
-            self.samples, = glob_wildcards(f"{self.bam_path}{{bam}}.bam", followlinks=True)
+            self.samples, = glob_wildcards(f"{self.bam_path}{{bam,[^/]+}}.bam", followlinks=True)
+            self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE", mandatory=["SNPCALLING"])
 
         # check VCF filter activation
         self.vcf_filter_activated = var_2_bool(tool="FILTER", key="", to_convert=self.get_config_value(level1="FILTER"))
         # If only VCF filtration get vcf path
         if not self.mapping_activated and not self.calling_activated and self.vcf_filter_activated:
-            self._check_file_or_string(level1="DATA", level2="VCF")
-            self.vcf_path = self.get_config_value(level1="DATA", level2="VCF")
+            self._check_file_or_string(level1="DATA", level2="VCF", mandatory=["VCFTOOL FILTER"])
 
         self.run_RAXML = var_2_bool(tool="RAXML", key="", to_convert=self.get_config_value(level1="RAXML"))
         self.run_RAXML_NG = var_2_bool(tool="RAXML_NG", key="", to_convert=self.get_config_value(level1="RAXML_NG"))
@@ -157,6 +162,15 @@ class RattleSNP(SnakeWrapper):
             self.CHROMOSOMES_WITHOUT_MITO = self.CHROMOSOMES.copy()
             if self.mito_name and self.mito_name in self.CHROMOSOMES:
                 self.CHROMOSOMES_WITHOUT_MITO.remove(self.mito_name)
+
+        if self.calling_activated and self.mapping_activated and self.bam_path:
+            raise ValueError(f"CONFIG FILE CHECKING FAIL : You want to run mapping with {self.mapping_tool_activated} but provided bam path '{self.bam_path}'\n")
+
+        # check VCF filter activation if raxml or raxml_ng
+        self.raxml_activated = var_2_bool(tool="RAXML", key="", to_convert=self.get_config_value(level1="RAXML"))
+        self.raxml_ng_activated = var_2_bool(tool="RAXML_NG", key="", to_convert=self.get_config_value(level1="RAXML_NG"))
+        if (self.raxml_activated or self.raxml_ng_activated) and not self.vcf_filter_activated:
+            self._check_file_or_string(level1="DATA", level2="VCF", mandatory=["FILTER", "RAXML"])
 
     def __repr__(self):
         return f"{self.__class__}({pprint.pprint(self.__dict__)})"

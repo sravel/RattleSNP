@@ -5,6 +5,8 @@
 # Input output data options
 DATA:
     FASTQ: "data_test_mapping/fastq_full/"
+#    BAM: "data_test_mapping/output/1_mapping/BWA_MEM/"
+    BAM: ""
     VCF: ""
     REFERENCE_FILE: "data_test_mapping/reference/FR1067.fasta"
     OUTPUT: "data_test_mapping/output"
@@ -23,11 +25,11 @@ CLEANING:
 MAPPING:
     ACTIVATE: true
     TOOL: "BWA_MEM"         # Use BWA_MEM or BWA_SAMPE only
-    BUILD_STATS: true      # warning if true but mapping false, mapping automatically run
-SNPCALLING: false
-FILTER: false                # Must be true if want run raxml or raxml-ng
-RAXML: false
-RAXML_NG: false
+    BUILD_STATS: true
+SNPCALLING: true
+FILTER: true                # Must be true if you want run raxml or raxml-ng
+RAXML: true
+RAXML_NG: true
 
 ### TODO post analyse tools like SNMF, RAXML, ...
 ################################
