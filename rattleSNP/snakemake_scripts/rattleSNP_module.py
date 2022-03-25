@@ -70,7 +70,7 @@ def parse_idxstats(files_list=None, out_csv=None, sep="\t"):
     dico_mapping_stats = defaultdict(OrderedDict)
     for csv_file in files_list:
         sample = Path(csv_file).stem.split("_")[0]
-        df = pd.read_csv(csv_file, sep="\t", header=None,names=["chr","chr_size","map_paired","map_single"], index_col=False)
+        df = pd.read_csv(csv_file, sep="\t", header=None, names=["chr", "chr_size", "map_paired", "map_single"], index_col=False)
         # print(df)
         unmap = df[df.chr == '*'].map_single.values[0]
         df = df[df.chr != '*']
@@ -127,10 +127,10 @@ def merge_samtools_depth_csv(csv_files, csv_file, sep="\t"):
     import pandas as pd
     df = (pd.read_csv(f, sep=sep) for f in csv_files)
     df = pd.concat(df)
-    df.rename(columns={'Unnamed: 0':'Samples'}, inplace=True)
-    with open(csv_file, "w") as libsizeFile:
+    df.rename(columns={'Unnamed: 0': 'Samples'}, inplace=True)
+    with open(csv_file, "w") as out_csv_file:
         # print(f"All CSV infos:\n{df}\n")
-        df.to_csv(libsizeFile, index=False, sep=sep)
+        df.to_csv(out_csv_file, index=False, sep=sep)
 
 
 def tsv_per_chromosome(gvcf_files, tsv_file, sep="\t"):
