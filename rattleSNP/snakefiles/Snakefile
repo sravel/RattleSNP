@@ -304,7 +304,7 @@ rule samtools_view_sort_bam:
         bam=f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
     output:
         bam_file =  f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam",
-        bai= f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam.bai"
+        bai= f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam.bai"
     params:
         other_options_samtools_view = config["PARAMS_TOOLS"]["SAMTOOLS_VIEW"],
         other_options_samtools_sort = config["PARAMS_TOOLS"]["SAMTOOLS_SORT"]
@@ -318,6 +318,7 @@ rule samtools_view_sort_bam:
             - bam: {{input.bam}}
         Output:
             - Bam: {{output.bam_file}}
+            - bai: {{output.bai}}
         Params:
             - other_options_samtools_view: {{params.other_options_samtools_view}}
             - other_options_samtools_sort: {{params.other_options_samtools_sort}}
