@@ -46,9 +46,9 @@ def parse_flagstat_multi_report(files_list, out_csv="toto.csv", sep="\t"):
                         parsed_data[sample][key] = float("nan")
         # Work out the total read count
         try:
-            parsed_data[sample]["flagstat_total"] = parsed_data[sample]["total_passed"] + parsed_data[sample]["total_failed"]
-            parsed_data[sample]["mapped_pass (%)"] = f'{(parsed_data[sample]["total_passed"]/parsed_data[sample]["flagstat_total"])*100:.2f}'
-            parsed_data[sample]["properly_paired (%)"] = f'{(parsed_data[sample]["properly paired_passed"]/parsed_data[sample]["flagstat_total"])*100:.2f}'
+            parsed_data[sample]["Total"] = parsed_data[sample]["total_passed"] + parsed_data[sample]["total_failed"]
+            parsed_data[sample]["mapped_pass (%)"] = f'{(parsed_data[sample]["total_passed"]/parsed_data[sample]["flagstat_total"])*100:.2f}%'
+            parsed_data[sample]["properly_paired (%)"] = f'{(parsed_data[sample]["properly paired_passed"]/parsed_data[sample]["flagstat_total"])*100:.2f}%'
         except KeyError as e:
             print(e)
             pass

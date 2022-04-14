@@ -19,7 +19,7 @@ cluster_config = rattlesnp.cluster_config
 
 # print(rattlesnp.export_use_yaml)
 # print for debug:
-pp(rattlesnp)
+# pp(rattlesnp)
 # exit()
 # print(tools_config)
 
