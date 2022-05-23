@@ -1,0 +1,31 @@
+#release: 'github'
+#github:
+#  user: "SouthGreenPlatform"
+#  repo: "culebrONT"
+#  customUrl: https://github.com/
+#  auth: "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" # Used for pushing, can be env "$GIT_TOKEN", will be replaced with env
+#  email: "sebastien.ravel@cirad.fr" # Used for creating tag
+#  ## Optional, if you want to change the default tag prefix ("v")
+#  tagPrefix: ""
+ release: "gitlab"
+ gitlab:
+   repo: 401
+   customUrl: https://forge.ird.fr/
+   email: "sebastien.ravel@cirad.fr" # Used for creating tag
+   user: "sravel" # Used for creating tag and pushing
+   ## Optional, if you want to change the default tag prefix ("v")
+   tagPrefix: ""
+commitFormat: angular
+branch:
+  master: release
+  beta: beta
+  <branch-name>: <kind>
+changelog:
+ printAll: true ## Print all valid commits to changelog## Used for releases (go template)
+ print: "all/compact"
+# templatePath: "./changelog.tmpl"    ## Path to a template file (go template)
+hooks:
+  preRelease:
+  - echo "toto"
+  postRelease:
+  - python3 -m build
