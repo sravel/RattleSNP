@@ -9,7 +9,7 @@ Install:
         - merge_requests
         - master@sravel/RattleSNP
         - web
-    image: sravel/rattleSNP_base:0.0.2
+    image: sravel/rattlesnp_base:0.0.1
     script:
         - echo "Test to python 3.8"
         - tox  --recreate -e py38 -vv
@@ -24,7 +24,7 @@ Test_config_CMSR.yaml:
         - merge_requests
         - master@sravel/RattleSNP
         - web
-    image: sravel/rattleSNP_base:0.0.2
+    image: sravel/rattlesnp_base:0.0.1
     script:
         - echo "Test to python 3.8"
         - tox  --recreate -e py38 -vv
