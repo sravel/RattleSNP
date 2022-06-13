@@ -96,7 +96,7 @@ See the section :ref:`3. How to configure tools_path.yaml` for details.
 Check install
 ==============
 
-In order to test your install of RattleSNP, a data test called ``Data-Xoo-sub/`` is available at https://itrop.ird.fr/culebront_utilities/.
+In order to test your install of RattleSNP, a data test called ``data_test_rattleSNP/`` is available at http://nas-bgpi.myds.me/DOC/rattleSNP/data_test_rattleSNP.zip.
 
 .. click:: rattleSNP.main:test_install
    :prog: rattleSNP test_install
