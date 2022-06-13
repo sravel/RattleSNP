@@ -5,25 +5,26 @@
 How to create a workflow
 ========================
 
-CulebrONT allow you to build a workflow using a simple configuration ``config.yaml`` file. In this file :
+RattleSNP allows you to build a workflow using a simple ``config.yaml`` configuration file :
 
-* First, provide data paths
+* First, provide the data paths
 * Second, activate tools from mapping to SNP calling.
 * And last, manage parameters tools.
 
-To create file juste run
+To create this file, just run:
 
-.. code-block:: bash
 
-   culebrONT create_config --help
-   culebrONT create_config -configyaml P/ath/to/file
+.. click:: rattleSNP.main:create_config
+    :prog: rattleSNP create_config
+    :show-nested:
 
-Then edit section on file according to your workflow.
+Then, edit the relevant sections of the file to customize your flavor of a workflow.
+
 
 1. Providing data
 ------------------
 
-First, indicate the data path in the configuration ``config.yaml`` file:
+First, indicate the data path in the ``config.yaml`` configuration file:
 
 .. code-block:: YAML
 
@@ -91,7 +92,7 @@ Example:
 4. Parameters for some specific tools
 --------------------------------------
 
-You can manage tools parameters on the params section on ``config.yaml`` file.
+You can manage tools parameters on the params section in the ``config.yaml`` file.
 
 Here you find standard parameters used on RattleSNP. Feel free to adapt it to your requires.
 
@@ -101,56 +102,64 @@ Here you find standard parameters used on RattleSNP. Feel free to adapt it to yo
     :lines: 34-
 
 .. warning::
-    Please check documentation of each tool and make sure that the settings are correct!
+    Please check documentation of each tool (outside of RattleSNP, and make sure that the settings are correct!)
 
-.. ############################################################
+
+------------------------------------------------------------------------
 
 How to run the workflow
 =======================
 
-Before run CulebrONT please be sure you have already modified the ``config.yaml`` file as was explained on :ref:`1. Providing data`
+Before attempting to run rattleSNP, please verify that you have already modified the ``config.yaml`` file as explained in :ref:`1. Providing data`.
 
-.. code-block:: python
-
-    culebrONT run_cluster --help
-    culebrONT run_cluster -c config.yaml --dry-run
+If you installed RattleSNP on a HPC cluster with a job scheduler, you can run:
 
 
-You can optionally also pass to snakemake more options by using non option parameter (check it https://snakemake.readthedocs.io/en/stable/executing/cli.html).
+.. click:: rattleSNP.main:run_cluster
+    :prog: rattleSNP run_cluster
+    :show-nested:
 
 
-Expert mode
+------------------------------------------------------------------------
+
+
+.. click:: rattleSNP.main:run_local
+    :prog: rattleSNP run_local
+    :show-nested:
+
+------------------------------------------------------------------------
+
+Advance run
 ===========
 
-Provide more ressources
------------------------
+Providing more resources
+--------------------------
 
-If cluster default resources are not sufficient, you can overwrite ``cluster_config.yaml`` file used by the profile doing:
+If the cluster default resources are not sufficient, you can edit the ``cluster_config.yaml`` file. See :ref:`2. Adapting *cluster_config.yaml*`:
 
-.. code-block:: bash
+.. click:: rattleSNP.main:edit_cluster_config
+    :prog: rattleSNP edit_cluster_config
+    :show-nested:
 
-    # in HPC overwriting cluster_config.yaml given by user
-    rattleSNP create_cluster_config --clusterconfig own_cluster_params.yaml
-    rattleSNP run_cluster --config config.yaml --clusterconfig own_cluster_params.yaml
 
-Now, take a coffee or tea, and enjoy !!!!!!
+------------------------------------------------------------------------
 
-Provide own tools_config.yaml
------------------------------
+Providing your own tools_config.yaml
+-------------------------------------
 
-To change the tools used on rattleSNP workflow, you can run
+To change the tools used in a RattleSNP workflow, you can see :ref:`3. How to configure tools_path.yaml`
 
-.. code-block:: bash
+.. click:: rattleSNP.main:edit_tools
+    :prog: rattleSNP edit_tools
+    :show-nested:
 
-    rattleSNP edit_tools
-    # to restore admin instal used
-    rattleSNP edit_tools --restore
+------------------------------------------------------------------------
 
 
 Output on RattleSNP
 ===================
 
-The architecture of RattleSNP output is designed as follows:
+The architecture of RattleSNP output is designed as follow:
 
 .. code-block:: bash
 
