@@ -1,12 +1,11 @@
 ---
-title: "Mapping quality report"
+title: "RattleSNP 1.1.0 report"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   rmdformats::readthedown:
     fig_caption: TRUE
     lightbox: TRUE
     gallery: TRUE
-    mathjax: "rmdformats"
     highlight: pygments
     toc_depth: 5
     toc_float:
@@ -25,6 +24,7 @@ color: #2980B9;
     background-image: linear-gradient(180deg,#A9EAFE,#A9EAFE);
     color: #2980B9;
 }
+#content{max-width: 80%;}
 .pagination > .active > a, .pagination > .active > a:focus, .pagination > .active > a:hover, .pagination > .active > span, .pagination > .active > span:focus, .pagination > .active > span:hover {
     background-color: #A9EAFE;
     border-color: #A9EAFE;
@@ -45,45 +45,51 @@ suppressMessages(library('ggplot2', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('rmarkdown', warn.conflict = FALSE, quietly = TRUE))
 suppressMessages(library('readr', warn.conflict = FALSE, quietly = TRUE))
 ```
-# Library size / mapped
-
-```{r Importation des données, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-
-file.quality <- snakemake@input$idxstats_resume
-# file.quality <- "/media/work/RattleSNP-git/script/all_mapping_stats_resume.csv"
-datatableQ <- read.table(file=file.quality, sep="\t", header=TRUE)
+```{r load data, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
 file.quality.depth <- snakemake@input$depth_resume
-# file.quality.depth <- "/media/work/RattleSNP-git/script/all_mapping_stats_Depth_resume.csv"
 datatableDepth <- read.table(file=file.quality.depth, sep="\t", header=TRUE)
+
+file.quality.flagstat <- snakemake@input$flagstat_resume
+datatablFlagstat <- read.table(file=file.quality.flagstat, sep="\t", header=TRUE)
 ```
 
-```{r Visualisation des taille de librairie, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-DT::datatable(datatableQ, caption =" Tableau n°1: Tableau des statistiques de taille des librairies et pourcentage de mapping",
-              rownames = NULL,
-              colnames = c("Sample",colnames(datatableQ[,2:4])),
-              escape = FALSE,
-              class = 'table table-striped table-bordered table-hover',
-              extensions = 'Buttons',
-              filter = list(position = 'top', clear = FALSE, plain = TRUE),
-              option= list(
-                         paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
-                         dom = 'BRSPQlfrtip',
-                         buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+
+# Samtools flagstat
+
+```{r Visualisation of samtools, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+datatable(datatablFlagstat, caption =" Tableau n°2: Samtools flagstat statistics",
+          rownames = FALSE,
+          colnames = colnames(datatablFlagstat),
+          escape = FALSE,
+          class = 'table table-striped table-bordered table-hover',
+          extensions = 'Buttons',
+          filter = list(position = 'top', clear = FALSE, plain = TRUE),
+          option= list(
+            paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+            dom = 'BRSPQlfrtip',
+            buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
                          )
               )
+
 ```
-# Stats mapped reads
+
+
+# Depth and coverage
 
 ```{r Visualisation of Depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
-datatable(datatableDepth, caption =" Tableau n°1: Tableau de mapping",
-          colnames = colnames(datatableDepth),
+datatable(datatableDepth, caption =" Tableau n°1: Genome coverage statistics",
           rownames = NULL,
+          colnames = colnames(datatableDepth),
+          escape = FALSE,
+          class = 'table table-striped table-bordered table-hover',
           extensions = 'Buttons',
-          style = 'bootstrap', class = 'table table-striped table-bordered table-hover',
-          filter = list(position = 'top', clear = FALSE, plain = TRUE)
+          filter = list(position = 'top', clear = FALSE, plain = TRUE),
+          option= list(
+                        paging=TRUE,searching = TRUE,ordering=TRUE,scrollCollapse=FALSE,server = TRUE, autoWidth = TRUE,
+                        dom = 'BRSPQlfrtip',
+                        buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+                    )
         )
-       #%>%
-      #formatStyle(TRUE,valueColumns ='poucent',color = 'black',font ='bold',background = styleInterval(c(0,25000), c('white','red','white')))
 ```
 
 <footer>

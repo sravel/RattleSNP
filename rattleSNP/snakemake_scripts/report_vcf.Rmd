@@ -1,5 +1,5 @@
 ---
-title: "VCF quality report"
+title: "RattleSNP 1.1.0 report VCF quality"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   rmdformats::readthedown:
@@ -80,7 +80,7 @@ We recommend setting a minimum threshold of 30 and filtering more strongly on ot
 
 ## Variant mean depth
 
-Next we will examine the mean depth for each of our variants. This is essentially the number of reads that have mapped to this position. 
+Next we will examine the mean depth for each of our variants. This is essentially the number of reads that have mapped to this position.
 The output we generated with vcftools is the mean of the read depth across all individuals - it is for both alleles at a position and is not partitioned between the reference and the alternative. First we read in the data.
 
 ```{r Variant mean depth, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}

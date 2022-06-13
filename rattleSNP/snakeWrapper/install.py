@@ -70,7 +70,7 @@ def install_cluster(scheduler, env, bash_completion, create_envmodule, modules_d
                      no_input=True,
                      extra_context={"profile_name": f'',
                                     "sbatch_defaults": "--export=ALL",
-                                    "cluster_config": "$HOME/.config/culebrONT/cluster_config.yaml",
+                                    "cluster_config": f"$HOME/.config/{package_name()}/cluster_config.yaml",
                                     "advanced_argument_conversion": 1,
                                     "cluster_name": ""
                                     },
@@ -179,12 +179,13 @@ def test_install(data_dir):
 
     # download data
     download_zip = data_dir.joinpath(DATATEST_URL_FILES[0])
-    if not download_zip.exists():
-        click.secho(f"    Download data test\n", fg="yellow")
-        results = multiprocessing_download(
-            [(DATATEST_URL_FILES[1], download_zip.as_posix())], threads=1)
-        for r in results:
-            click.secho(r, fg="blue")
+    if not Path(download_zip.as_posix()[:-4]).exists():
+        if not download_zip.exists():
+            click.secho(f"    Download data test\n", fg="yellow")
+            results = multiprocessing_download(
+                [(DATATEST_URL_FILES[1], download_zip.as_posix())], threads=1)
+            for r in results:
+                click.secho(r, fg="blue")
         click.secho(f"    Extract archive {download_zip} to {data_dir.as_posix()}\n", fg="yellow")
         unpack_archive(download_zip.as_posix(), data_dir.as_posix())
         download_zip.unlink()

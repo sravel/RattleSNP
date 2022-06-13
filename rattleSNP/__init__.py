@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 from .snakeWrapper import *
 from .global_variables import *
-
+from .snakemake_scripts.rattleSNP_module import *
+from .snakemake_module import RattleSNP
 
 logo = INSTALL_PATH.joinpath('RattleSNP_logo.png').as_posix()
 

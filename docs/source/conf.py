@@ -15,13 +15,15 @@
 import rattleSNP
 from rattleSNP.snakeWrapper.global_variable import *
 
-sys.path.insert(0, os.path.abspath('../../'))
-
 
 # The short X.Y version.
 version = rattleSNP.__version__
 # The full version, including alpha/beta/rc tags
 release = rattleSNP.__version__
+
+rst_prolog = f"""
+.. |tools_path| replace:: {GIT_TOOLS_PATH}
+"""
 
 # -- Project information -----------------------------------------------------
 # General information about the project.

@@ -21,8 +21,7 @@ Best SNP calling workflow
    :name: install
    :maxdepth: 2
 
-   Install.rst
-
+   INSTALL.rst
 
 .. toctree::
    :caption: Defining Workflows
@@ -30,6 +29,20 @@ Best SNP calling workflow
    :maxdepth: 2
 
    WORKFLOWS.rst
+
+.. toctree::
+   :caption: Project Info
+   :name: project_info
+   :maxdepth: 1
+
+   PROJECT.rst
+
+.. toctree::
+   :caption: FAQ
+   :name: faq_questions
+   :maxdepth: 2
+
+   FAQ.rst
 
 .. toctree::
    :caption: API

@@ -4,7 +4,7 @@ from .global_variable import *
 from .usefull_function import package_name
 import os
 import re
-
+import subprocess
 
 def rewrite_if_bind(snakemake_other):
     """
@@ -36,7 +36,7 @@ def run_cluster(config, pdf, snakemake_other):
     See: https://snakemake.readthedocs.io/en/stable/executing/cli.html
 
     Example:
-        culebrONT run_cluster -c config.yaml --dry-run --jobs 200
+        rattleSNP run_cluster -c config.yaml --dry-run --jobs 200
     """
     profile = DEFAULT_PROFILE
     tools = GIT_TOOLS_PATH
@@ -61,8 +61,10 @@ def run_cluster(config, pdf, snakemake_other):
 
     cmd_snakemake_base = f"snakemake --show-failed-logs -p -s {SNAKEFILE} --configfile {config} --profile {profile} {cmd_clusterconfig} {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
-    # exit()
-    os.system(cmd_snakemake_base)
+    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
+    sys.stdout.buffer.write(process.stdout)
 
     if pdf:
         dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
@@ -91,22 +93,27 @@ def run_local(config, threads, pdf, snakemake_other):
     These parameters will take precedence over Snakemake ones, which were
     defined in the profile.
     See: https://snakemake.readthedocs.io/en/stable/executing/cli.html
-    
+
     Example:
 
-        culebrONT run_local -c config.yaml --threads 8 --dry-run
+        rattleSNP run_local -c config.yaml --threads 8 --dry-run
 
-        culebrONT run_local -c config.yaml --threads 8 --singularity-args '--bind /mnt:/mnt'
+        rattleSNP run_local -c config.yaml --threads 8 --singularity-args '--bind /mnt:/mnt'
 
         # in LOCAL using 6 threads for Canu assembly from the total 8 threads\n
-        culebrONT run_local -c config.yaml --threads 8 --set-threads run_canu=6
+        rattleSNP run_local -c config.yaml --threads 8 --set-threads run_canu=6
 
     """
     click.secho(f'    Config file: {config}', fg='yellow')
+    click.secho(f'    Tools config file: {USER_TOOLS_PATH}', fg='yellow')
 
     cmd_snakemake_base = f"snakemake --latency-wait 1296000 --cores {threads} --use-singularity --show-failed-logs --printshellcmds -s {SNAKEFILE} --configfile {config}  {' '.join(rewrite_if_bind(snakemake_other))}"
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
-    os.system(cmd_snakemake_base)
+    process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
+    if int(process.returncode) >= 1:
+        sys.exit(1)
+    sys.stdout.buffer.write(process.stdout)
+
     if pdf:
         dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
         click.secho(f"    {dag_cmd_snakemake}\n", fg='bright_blue')

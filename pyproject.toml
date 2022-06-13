@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "wheel>=0.37.1", "setuptools_scm>=6.2"]
+requires = ["setuptools", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
@@ -18,40 +18,55 @@ envlist = py{38,39}
 skip_missing_interpreters = True
 skipsdist=False
 
+[gh-actions]
+python = 3.8: py38
+
 [testenv:py{38,39}]
 description = Run the install in Python 3.8
 skip_install = False
 changedir={envdir}
+whitelist_externals =
+    bash
+    echo
 envdir =
     py38: {toxworkdir}/py38
     py39: {toxworkdir}/py39
 commands =
     rattleSNP --help
+    bash -ec 'echo `pwd`'
+    bash -ec 'CPDIR="./lib/python3.8/site-packages/rattleSNP/containers/"; DIR="/usr/local/rattleSNP/Containers"; if [[ -d $DIR ]]; then ls $DIR;  echo "copy Containers files in $DIR to $CPDIR"; ln -sf $DIR/* $CPDIR; fi'
     rattleSNP install_local
 
 
 [run]
 description = Run Installation rattleSNP install_local
 changedir={envdir}
+whitelist_externals =
+    bash
+    echo
+    mkdir
 skipsdist=True
+skip_install=True
 commands =
-    rattleSNP test_install -d test
+    mkdir -p data_test_mapping
+    bash -ec 'CPFILE="./data_test_mapping/data_test_rattleSNP.zip"; FILE="/usr/local/rattleSNP/data_test_mapping/data_test_rattleSNP.zip"; if [[ -f "$FILE" ]]; then ls $FILE;  echo "copy data_test files in $FILE to $CPFILE"; ln -sf $FILE $CPFILE; fi'
+    rattleSNP test_install -d data_test_mapping
     rattleSNP run_local --threads 8 --config {posargs} --singularity-args '--bind /builds:/builds'
 
 
 [testenv:py38-run]
-description = Run workflow pass on args to culebrONT
+description = Run workflow pass on args to rattleSNP
 envdir =
     py38: {toxworkdir}/py38
     py39: {toxworkdir}/py39
 changedir={envdir}
+whitelist_externals =
+    bash
+    echo
+    mkdir
+skipsdist=True
+skip_install=True
 commands = {[run]commands}
 
-
-#[testenv:py{38,39}-run]
-#description = Run workflow pass on args to rattleSNP
-#envdir = {toxworkdir}/py{38,39}-tests
-#skipsdist=True
-#commands = rattleSNP run_local --threads 8 --config {posargs}
 """
 
