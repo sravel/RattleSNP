@@ -1,5 +1,5 @@
 ---
-title: "RattleSNP 1.0.1 report"
+title: "RattleSNP 1.1.0 report"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   rmdformats::readthedown:
