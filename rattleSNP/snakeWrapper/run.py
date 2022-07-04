@@ -63,8 +63,11 @@ def run_cluster(config, pdf, snakemake_other):
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
     process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
     if int(process.returncode) >= 1:
+        # sys.stderr.buffer.write(process.stderr) #snakemake writes error in stdout
+        sys.stdout.buffer.write(process.stdout)
         sys.exit(1)
     sys.stdout.buffer.write(process.stdout)
+
 
     if pdf:
         dag_cmd_snakemake = f"{cmd_snakemake_base} --dag | dot -Tpdf > schema_pipeline_dag.pdf"
@@ -111,6 +114,8 @@ def run_local(config, threads, pdf, snakemake_other):
     click.secho(f"\n    {cmd_snakemake_base}\n", fg='bright_blue')
     process = subprocess.run(cmd_snakemake_base, shell=True, check=False, stdout=subprocess.PIPE)
     if int(process.returncode) >= 1:
+        sys.stderr.buffer.write(process.stderr) #snakemake writes error in stdout
+        sys.stdout.buffer.write(process.stdout)
         sys.exit(1)
     sys.stdout.buffer.write(process.stdout)
 
