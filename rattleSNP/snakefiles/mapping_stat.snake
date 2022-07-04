@@ -156,8 +156,8 @@ rule report:
     log:
         error =  f'{log_dir}report/report.e',
         output = f'{log_dir}report/report.o'
-    # envmodules:
-        # tools_config["MODULES"]["R"]
+    envmodules:
+        tools_config["MODULES"]["R"]
     message:
         f"""
         Running {{rule}}
