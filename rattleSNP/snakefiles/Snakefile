@@ -498,7 +498,8 @@ rule picardTools_mark_duplicates:
         tools_config["MODULES"]["PICARDTOOLS"]
     shell:
         """
-        (picard MarkDuplicates {params.other_options} I={input.bam_file} O={output.bam_file} M={output.txt_file}) 1>{log.output} 2>{log.error}
+        #(picard MarkDuplicates {params.other_options} I={input.bam_file} O={output.bam_file} M={output.txt_file}) 1>{log.output} 2>{log.error}
+        (picard MarkDuplicates {params.other_options} -INPUT {input.bam_file} -OUTPUT {output.bam_file} -METRICS_FILE {output.txt_file}) 1>{log.output} 2>{log.error}
         """
 
 
