@@ -425,7 +425,7 @@ rule samtools_view_sort_bam:
     shell:
         """
         (samtools view -@ {threads} {params.other_options_samtools_view} {input.bam} |
-        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file} 
+        samtools sort -@ {threads} {params.other_options_samtools_sort} -o {output.bam_file}
         samtools index -@ {threads} {output.bam_file}) 1>{log.output} 2>{log.error}
         """
 
@@ -498,7 +498,7 @@ rule picardTools_mark_duplicates:
         tools_config["MODULES"]["PICARDTOOLS"]
     shell:
         """
-        (picard MarkDuplicates {params.other_options} -INPUT {input.bam_file} -OUTPUT {output.bam_file} -METRICS_FILE {output.txt_file}) 1>{log.output} 2>{log.error}
+        (picard MarkDuplicates {params.other_options} I={input.bam_file} O={output.bam_file} M={output.txt_file}) 1>{log.output} 2>{log.error}
         """
 
 
@@ -614,6 +614,9 @@ rule map_per_chromosome:
         gvcf_list = expand(rules.gatk_HaplotypeCaller.output.vcf_file, samples = rattlesnp.samples , chromosomes = "{chromosomes}"),
     output:
         tsv = f"{out_dir}2_snp_calling/GATK_GenomicsDBImport/DB-{{chromosomes}}-map.tsv"
+    log:
+        error =  f'{log_dir}map_per_chromosome/{{chromosomes}}.e',
+        output = f'{log_dir}map_per_chromosome/{{chromosomes}}.o'
     message:
         f"""
         Running {{rule}}
@@ -731,7 +734,7 @@ rule bcftools_concat:
         tools_config["MODULES"]["BCFTOOLS"]
     shell:
         """
-        (bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z;   
+        (bcftools concat --threads {threads} {input.vcf_file} -o {output.vcf_file} -O z;
         bcftools index --threads {threads} --tbi {output.vcf_file}) 1>{log.output} 2>{log.error}
         """
 
@@ -919,8 +922,8 @@ rule report_vcf:
     log:
         error =  f'{log_dir}report_vcf/report{{vcf_suffix}}.e',
         output = f'{log_dir}report_vcf/report{{vcf_suffix}}.o'
-    # envmodules:
-        # tools_config["MODULES"]["R"]
+    envmodules:
+        tools_config["MODULES"]["R"]
     message:
         f"""
         Execute {{rule}} for
