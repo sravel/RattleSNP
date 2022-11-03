@@ -33,9 +33,8 @@ class RattleSNP(SnakeWrapper):
         self.fastq_path = None
         self.bam_path = None
         self.vcf_path = None
+        self.vcf_path_basename = "All_samples_GenotypeGVCFs"
         self.samples = []
-        self.run_RAXML = False
-        self.run_RAXML_NG = False
         self.reference = None
 
         self.CHROMOSOMES = []
@@ -60,6 +59,10 @@ class RattleSNP(SnakeWrapper):
 
         # filter
         self.vcf_filter_activated = False
+
+        # phylogeny
+        self.raxml_activated = False
+        self.raxml_ng_activated = False
 
         self.__check_config_dic()
 
@@ -139,7 +142,7 @@ class RattleSNP(SnakeWrapper):
         self.calling_activated = var_2_bool(tool="SNPCALLING", key="", to_convert=self.get_config_value(level1="SNPCALLING"))
 
         if not self.mapping_activated and self.calling_activated:
-            self._check_dir_or_string(level1="DATA", level2="BAM")
+            self._check_dir_or_string(level1="DATA", level2="BAM", mandatory=["SNPCALLING"])
             self.samples, = glob_wildcards(f"{self.bam_path}{{bam,[^/]+}}.bam", followlinks=True)
             self._check_file_or_string(level1="DATA", level2="REFERENCE_FILE", mandatory=["SNPCALLING"])
 
@@ -148,9 +151,6 @@ class RattleSNP(SnakeWrapper):
         # If only VCF filtration get vcf path
         if not self.mapping_activated and not self.calling_activated and self.vcf_filter_activated:
             self._check_file_or_string(level1="DATA", level2="VCF", mandatory=["VCFTOOL FILTER"])
-
-        self.run_RAXML = var_2_bool(tool="RAXML", key="", to_convert=self.get_config_value(level1="RAXML"))
-        self.run_RAXML_NG = var_2_bool(tool="RAXML_NG", key="", to_convert=self.get_config_value(level1="RAXML_NG"))
 
         # check mitochondrial name is in fasta is not Nome
         if self.cleaning_activated or self.mapping_activated or self.calling_activated:
@@ -171,6 +171,9 @@ class RattleSNP(SnakeWrapper):
         self.raxml_ng_activated = var_2_bool(tool="RAXML_NG", key="", to_convert=self.get_config_value(level1="RAXML_NG"))
         if (self.raxml_activated or self.raxml_ng_activated) and not self.vcf_filter_activated:
             self._check_file_or_string(level1="DATA", level2="VCF", mandatory=["FILTER", "RAXML"])
+
+        if self.vcf_path:
+            self.vcf_path_basename = Path(self.vcf_path).name.replace("".join(Path(self.vcf_path).suffixes), "")
 
     def __repr__(self):
         return f"{self.__class__}({pprint.pprint(self.__dict__)})"
