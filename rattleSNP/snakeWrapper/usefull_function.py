@@ -70,7 +70,7 @@ def get_last_version(url, current_version):
         import click
         module_mane = url.split('/')[-1]
         HTML = urlopen(f"{url}/tags").read().decode('utf-8')
-        str_search = f"{url.replace('https://github.com', '')}/releases/tag/.*"
+        str_search = f"{url.replace('https://github.com', '')}/releases/tag/.*\""
         lastRelease = search(str_search, HTML).group(0).split("/")[-1].split('"')[0]
         epilogTools = "\n"
         if str(current_version) != lastRelease:
