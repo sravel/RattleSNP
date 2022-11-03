@@ -1,6 +1,5 @@
 #!/usr/bin/env snakemake
 # -*- coding: utf-8 -*-
-
 from pathlib import Path
 from pprint import pprint as pp
 # load own functions
@@ -116,30 +115,46 @@ def output_final(wildcards):
             "bam": expand(f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}_sorted.bam",samples=rattlesnp.samples),
             "report": f"{out_dir}1_mapping/STATS/report.html"
         })
-    if rattlesnp.calling_activated and not rattlesnp.vcf_filter_activated:
+    if rattlesnp.calling_activated:
         dico_final.update({
-            "vcf_file": f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz',
-            "report_vcf_raw": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html",vcf_suffix="_raw")
+            "vcf_file": rules.bcftools_concat.output.vcf_file ,
+            "report_vcf_raw": expand(rules.report_vcf.output.report,vcf_suffix=["_WITHOUT_MITO"])
         })
     if rattlesnp.vcf_filter_activated:
         dico_final.update({
-            "report_vcf_filter": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix=config['PARAMS']['FILTER_SUFFIX']),
-            #"fasta": expand(f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
-            "geno" :  expand(f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+            "report_vcf_filter": expand(rules.report_vcf.output.report, vcf_suffix=config['PARAMS']['FILTER_SUFFIX']),
         })
     if rattlesnp.vcf_path:
         dico_final.update({
-            "report_vcf_user": expand(f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html", vcf_suffix="_user")
-        })
-    if rattlesnp.run_RAXML and rattlesnp.vcf_filter_activated:
-        dico_final.update({
-            "RAXML": expand(f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
-        })
-    if rattlesnp.run_RAXML_NG and rattlesnp.vcf_filter_activated:
-        dico_final.update({
-            "RAXML_NG": expand(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.raxml.bestTree', vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
-        })
-    # pp.pprint(dico_final)
+            "report_vcf_user": expand(rules.report_vcf.output.report, vcf_suffix=[""])})
+        if config["FILTER"]:
+            dico_final.update({
+                "fasta": expand(rules.vcf_to_fasta.output.fasta, vcf_suffix=config['PARAMS']['FILTER_SUFFIX']),
+                "geno": expand(rules.vcf_to_geno.output.geno, vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])})
+        else:
+            dico_final.update({
+                "fasta": expand(rules.vcf_to_fasta.output.fasta, vcf_suffix=[""]),
+                "geno": expand(rules.vcf_to_geno.output.geno, vcf_suffix=[""])})
+
+    if rattlesnp.raxml_activated:
+        if config["FILTER"]:
+            dico_final.update({
+                "RAXML": expand(rules.run_raxml.output.tree, vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+            })
+        else:
+            dico_final.update({
+                "RAXML": expand(rules.run_raxml.output.tree, vcf_suffix=[""])
+            })
+    if rattlesnp.raxml_ng_activated:
+        if config["FILTER"]:
+            dico_final.update({
+                "RAXML_NG": expand(rules.run_raxml_ng.output.tree, vcf_suffix=config['PARAMS']['FILTER_SUFFIX'])
+            })
+        else:
+            dico_final.update({
+                "RAXML_NG": expand(rules.run_raxml_ng.output.tree, vcf_suffix=[""])
+            })
+    # pp(dico_final)
     return dico_final
 
 
@@ -499,7 +514,7 @@ rule picardTools_mark_duplicates:
     shell:
         """
         #(picard MarkDuplicates {params.other_options} I={input.bam_file} O={output.bam_file} M={output.txt_file}) 1>{log.output} 2>{log.error}
-        (picard MarkDuplicates {params.other_options} -INPUT {input.bam_file} -OUTPUT {output.bam_file} -METRICS_FILE {output.txt_file}) 1>{log.output} 2>{log.error}
+        (picard MarkDuplicates {params.other_options} --INPUT {input.bam_file} --OUTPUT {output.bam_file} --METRICS_FILE {output.txt_file}) 1>{log.output} 2>{log.error}
         """
 
 
@@ -629,7 +644,7 @@ rule map_per_chromosome:
             - Threads : {{threads}}
         """
     run:
-        tsv_per_chromosome(input.gvcf_list, output.tsv)
+        tsv_per_chromosome(input.gvcf_list, output.tsv, wildcards.chromosomes)
 
 
 rule gatk_GenomicsDBImport:
@@ -712,8 +727,8 @@ rule bcftools_concat:
         vcf_file_all = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES),
         vcf_file = expand(rules.gatk_GenotypeGVCFs_merge.output.vcf_file, chromosomes = rattlesnp.CHROMOSOMES_WITHOUT_MITO)
     output:
-        vcf_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz',
-        tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO_raw.vcf.gz.tbi'
+        vcf_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz',
+        tbi_file = f'{out_dir}2_snp_calling/All_samples_GenotypeGVCFs_WITHOUT_MITO.vcf.gz.tbi'
     log:
         error =  f'{log_dir}bcftools_concat/bcftools_concat.e',
         output = f'{log_dir}bcftools_concat/bcftools_concat.o'
@@ -746,8 +761,9 @@ def get_filter_options(wildcards):
     keys = config["PARAMS"]["FILTER_SUFFIX"]
     values = config["PARAMS_TOOLS"]["VCFTOOLS"]
     dict_options = dict(zip(keys, values))
-    options = dict_options[wildcards.vcf_suffix]
-    return options
+    if wildcards.vcf_suffix in dict_options:
+        options = dict_options[wildcards.vcf_suffix]
+        return options
 
 
 rule vcftools_filter:
@@ -755,7 +771,7 @@ rule vcftools_filter:
     input:
         vcf_file_all = rules.bcftools_concat.output.vcf_file if not rattlesnp.vcf_path else rattlesnp.vcf_path
     output:
-        vcf_file = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.vcf.gz' if f"{{vcf_suffix}}" != "_user" else ""
+        vcf_file_filter = f'{out_dir}4_snp_calling_filter/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.vcf.gz'
     params:
         other_options = get_filter_options
     log:
@@ -767,7 +783,7 @@ rule vcftools_filter:
         Input:
             - vcf : {{input.vcf_file_all}}
         Output:
-            - vcf : {{output.vcf_file}}
+            - vcf_filter : {{output.vcf_file_filter}}
         Params:
             - {{params.other_options}}
         Others
@@ -782,19 +798,19 @@ rule vcftools_filter:
         tools_config["MODULES"]["SAMTOOLS"]
     shell:
         """
-        vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout  | sed -r "s#\.\/\.#.#g" | bgzip -c 1> {output.vcf_file} 2>{log.error}
+        vcftools --gzvcf {input.vcf_file_all} {params.other_options} --stdout  | sed -r "s#\.\/\.#.#g" | bgzip -c 1> {output.vcf_file_filter} 2>{log.error}
         """
-
 
 rule vcf_to_fasta:
     threads: get_threads('vcf_to_fasta', 1)
     input:
-        vcf_file_filter = rules.vcftools_filter.output.vcf_file
+        vcf_file_filter = rules.vcftools_filter.output.vcf_file_filter if config["FILTER"] else rattlesnp.vcf_path
+    wildcard_constraints:
+        vcf_suffix=".*|.+"
     output:
-        fasta = f'{out_dir}5_fasta_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta'
+        fasta = f'{out_dir}5_fasta_file/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.fasta'
     params:
-        fasta = f'{out_dir}4_snp_calling_filter/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.fasta',
-        folder = directory(f'{out_dir}4_snp_calling_filter/')
+        folder = directory(f'{out_dir}5_fasta_file/')
     log:
         error =  f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.e',
         output = f'{log_dir}vcf_to_fasta/vcf_to_fasta{{vcf_suffix}}.o'
@@ -816,16 +832,17 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        ({SCRIPTS}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f --output-folder {{params.folder}}
-        mv {{params.fasta}} {{output.fasta}}) 1>{{log.output}} 2>{{log.error}}
+        ({SCRIPTS}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f --output-folder {{params.folder}}) 1>{{log.output}} 2>{{log.error}}
         """
 
 rule vcf_to_geno:
     threads: get_threads('vcf_to_geno', 1)
     input:
-        vcf_file_filter = rules.vcftools_filter.output.vcf_file
+        vcf_file_filter = rules.vcftools_filter.output.vcf_file_filter if config["FILTER"]  else rattlesnp.vcf_path
+    wildcard_constraints:
+        vcf_suffix=".*|.+"
     output:
-        geno = f'{out_dir}7_geno_file/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.geno'
+        geno = f'{out_dir}7_geno_file/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.geno'
     log:
         error =  f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.e',
         output = f'{log_dir}vcf_to_geno/vcf_to_geno{{vcf_suffix}}.o'
@@ -854,24 +871,26 @@ rule vcf_to_geno:
 # VCF STATS
 ######################################
 def vcf_to_stats(wildcards):
-    if rattlesnp.vcf_path and wildcards.vcf_suffix == "_user":
+    if rattlesnp.vcf_path and config["FILTER"] and wildcards.vcf_suffix != "":
+        return rules.vcftools_filter.output.vcf_file_filter
+    if rattlesnp.vcf_path and wildcards.vcf_suffix == "":
         return rattlesnp.vcf_path
-    elif wildcards.vcf_suffix == "_raw":
+    if not rattlesnp.vcf_path:
         return rules.bcftools_concat.output.vcf_file
-    elif wildcards.vcf_suffix in config['PARAMS']['FILTER_SUFFIX']:
-        return rules.vcftools_filter.output.vcf_file
 
 rule vcf_stats:
     threads: get_threads('vcf_stats', 1)
     input:
         vcf_file_all = vcf_to_stats
+    wildcard_constraints:
+        vcf_suffix=".*|.+"
     output:
-        freq = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.frq'),
-        depth = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.idepth'),
-        depth_mean = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.ldepth.mean'),
-        qual = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lqual'),
-        missing_ind = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.imiss'),
-        miss = temp(f'{out_dir}3_all_snp_calling_stats/All_samples_GenotypeGVCFs{{vcf_suffix}}.lmiss')
+        freq = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.frq'),
+        depth = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.idepth'),
+        depth_mean = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.ldepth.mean'),
+        qual = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.lqual'),
+        missing_ind = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.imiss'),
+        miss = temp(f'{out_dir}3_all_snp_calling_stats/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.lmiss')
     params:
         dirout = directory(f'{out_dir}3_all_snp_calling_stats/')
     log:
@@ -918,8 +937,10 @@ rule report_vcf:
         qual = rules.vcf_stats.output.qual,
         missing_ind = rules.vcf_stats.output.missing_ind,
         miss = rules.vcf_stats.output.miss
+    wildcard_constraints:
+        vcf_suffix=".*|.+"
     output:
-        report = f"{out_dir}3_all_snp_calling_stats/report_vcf{{vcf_suffix}}.html"
+        report = f"{out_dir}3_all_snp_calling_stats/report_vcf_{rattlesnp.vcf_path_basename}{{vcf_suffix}}.html"
     log:
         error =  f'{log_dir}report_vcf/report{{vcf_suffix}}.e',
         output = f'{log_dir}report_vcf/report{{vcf_suffix}}.o'
@@ -953,12 +974,14 @@ rule run_raxml:
     threads: get_threads('run_raxml', 1)
     input:
         fasta = rules.vcf_to_fasta.output.fasta
+    wildcard_constraints:
+        vcf_suffix=".+"
     output:
-        tree = f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
+        tree = f'{out_dir}6_raxml/filter{{vcf_suffix}}/RAxML_bestTree.{rattlesnp.vcf_path_basename}{{vcf_suffix}}',
         dir = directory(f'{out_dir}6_raxml/filter{{vcf_suffix}}/')
     params:
         other_params = config["PARAMS_TOOLS"]["RAXML"],
-        name = f"All_samples_GenotypeGVCFs_filter{{vcf_suffix}}".replace('-','')
+        name = f"{rattlesnp.vcf_path_basename}{{vcf_suffix}}".replace('-','')
     log:
         error =  f'{log_dir}raxml/raxml{{vcf_suffix}}.e',
         output = f'{log_dir}raxml/raxml{{vcf_suffix}}.o'
@@ -991,11 +1014,13 @@ rule run_raxml_ng:
     # threads: workflow.cores
     input:
         fasta = rules.vcf_to_fasta.output.fasta
+    wildcard_constraints:
+        vcf_suffix=".+"
     output:
-        tree = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}.raxml.bestTree',
+        tree = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/{rattlesnp.vcf_path_basename}{{vcf_suffix}}.raxml.bestTree',
         dir = directory(f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/')
     params:
-        prefix = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/All_samples_GenotypeGVCFs_filter{{vcf_suffix}}',
+        prefix = f'{out_dir}6_raxml_ng/filter{{vcf_suffix}}/{rattlesnp.vcf_path_basename}{{vcf_suffix}}',
         other_params = lambda wildcards: config["PARAMS_TOOLS"]["RAXML_NG"]
     log:
         error =  f'{log_dir}raxml_ng/raxml{{vcf_suffix}}.e',
@@ -1021,5 +1046,5 @@ rule run_raxml_ng:
         tools_config["MODULES"]["RAXML_NG"]
     shell:
         """
-        (raxml-ng --threads {threads} --msa {input.fasta} --prefix {params.prefix} {params.other_params}) 1> {log.output} 2>{log.error}
+        (raxml-ng --threads auto{{{threads}}} --msa {input.fasta} --prefix {params.prefix} {params.other_params}) 1> {log.output} 2>{log.error}
         """
