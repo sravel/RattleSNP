@@ -133,14 +133,21 @@ Using the previous information, you must select the missing data threshold. For 
 Last of all for our per variant analyses, we will take a look at the distribution of allele frequencies. This will help inform our minor-allele frequency (MAF) thresholds. As previously, we read in the data:
 
 ```{r Minor allele frequency, echo=FALSE, message=FALSE, warning=FALSE, include=TRUE}
+
 var_freq <- read_delim(paste0(basename, ".frq"), delim = "\t",
+
                        col_names = c("chr", "pos", "nalleles", "nchr", "a1", "a2", "maf"), skip = 1, show_col_types = FALSE)
 
+
 # find minor allele frequency
+
 var_freq$maf <- var_freq %>% select(a1, a2) %>% apply(1, function(z) min(z))
 
-a <- ggplot(var_freq, aes(maf)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3)+ theme_light()
-ggplotly(a)
+#
+# a <- ggplot(var_freq$maf, aes(maf)) + geom_density(fill = "dodgerblue1", colour = "black", alpha = 0.3)+ theme_light()
+#
+# ggplotly(a)
+
 
 ```
 The distribution might look a little odd - this is partly because of the low number of individuals we have in the dataset (16), meaning there are only certain frequencies possible. Nonetheless, it is clear that a large number of variants have low frequency alleles. We can also look at the distribution in more detail:
