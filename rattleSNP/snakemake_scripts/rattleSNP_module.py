@@ -109,10 +109,10 @@ def check_mapping_stats(ref, depth_file, out_csv, sep="\t"):
         for line in depth_file_open:
             chr, pos, depth = line.rstrip().split("\t")
             listMap.append(int(depth))
-    dicoResume[sample]["Mean Depth"] = f"{mean(listMap):.2f} X"
-    dicoResume[sample]["Median Depth"] = f"{median(listMap):.2f} X"
-    dicoResume[sample]["Max Depth"] = f"{max(listMap):.2f} X"
-    dicoResume[sample]["Mean Genome coverage"] = f"{(len(listMap)/genome_size)*100:.2f}%"
+    dicoResume[sample]["Mean Depth"] = f"{mean(listMap):.2f}"
+    dicoResume[sample]["Median Depth"] = f"{median(listMap):.2f}"
+    dicoResume[sample]["Max Depth"] = f"{max(listMap):.2f}"
+    dicoResume[sample]["%Mean Genome coverage"] = f"{(len(listMap)/genome_size)*100:.2f}"
 
     dataframe_mapping_stats = pd.DataFrame.from_dict(dicoResume, orient='index')
     dataframe_mapping_stats.reset_index(level=0, inplace=True)
@@ -136,7 +136,8 @@ def merge_samtools_depth_csv(csv_files, csv_file, sep="\t"):
 def tsv_per_chromosome(gvcf_files, tsv_file, sep="\t"):
     import pandas as pd
     from pathlib import Path
-    dico = {(Path(file).stem.split('-scaffold')[0], file) for file in gvcf_files}
+    split_by = Path(tsv_file).stem.split("-")[1]
+    dico = {(Path(file).stem.split(split_by)[0], file) for file in gvcf_files}
     df = pd.DataFrame.from_dict(dico)
     with open(tsv_file, "w") as out_tsv_file:
         # print(f"Library size:\n{dataframe_mapping_stats}\n")
