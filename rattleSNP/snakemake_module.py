@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from snakemake.io import glob_wildcards
-import pprint
+from pprint import pp
 from .global_variables import *
-from .snakeWrapper import *
+from snakecdysis import *
 
 
 ################################################
@@ -18,13 +18,13 @@ def get_list_chromosome_names(fasta_file):
     return [*SeqIO.to_dict(SeqIO.parse(fasta_file, "fasta"))]
 
 
-class RattleSNP(SnakeWrapper):
+class RattleSNP(SnakEcdysis):
     """
     to read file config
     """
 
-    def __init__(self, workflow, config, ):
-        super().__init__(workflow, config)
+    def __init__(self, dico_tool, workflow, config):
+        super().__init__(**dico_tool, workflow=workflow, config=config)
         # workflow is available only in __init__
         # print("\n".join(list(workflow.__dict__.keys())))
         # print(workflow.__dict__)
@@ -88,11 +88,11 @@ class RattleSNP(SnakeWrapper):
         if not self.fastq_files_list:
             raise ValueError(
                 f"CONFIG FILE CHECKING FAIL : you need to append at least on fastq with extension on "
-                f"{ALLOW_FASTQ_EXT}\n")
+                f"{ALLOW_FASTQ_EXT}\ncheck path: '{self.fastq_path}'")
         # check if all fastq have the same extension
         if len(fastq_files_list_ext) > 1:
             raise ValueError(
-                f"CONFIG FILE CHECKING FAIL :please check 'DATA' section, key 'FASTQ', use only one extension format "
+                f"CONFIG FILE CHECKING FAIL :please check 'DATA' section, key 'FASTQ', use only one extension format\ncheck path: '{self.fastq_path}'"
                 f"from {fastq_files_list_ext} found\n")
         else:
             self.fastq_files_ext = fastq_files_list_ext[0]
@@ -158,7 +158,8 @@ class RattleSNP(SnakeWrapper):
             self.CHROMOSOMES = get_list_chromosome_names(self.get_config_value('DATA', 'REFERENCE_FILE'))
             if self.mito_name and self.mito_name not in self.CHROMOSOMES:
                 raise NameError(
-                    f'CONFIG FILE CHECKING FAIL : in the "PARAMS" section, "MITOCHONDRIAL_NAME" key: the name "{self.mito_name}" is not in fasta file {self.get_config_value("DATA", "REFERENCE_FILE")}\n')
+                    f'CONFIG FILE CHECKING FAIL : in the "PARAMS" section, "MITOCHONDRIAL_NAME" key: the name "{self.mito_name}" is not in fasta file {self.get_config_value("DATA", "REFERENCE_FILE")}\n'
+                    f'Available: "{self.CHROMOSOMES}"')
             self.CHROMOSOMES_WITHOUT_MITO = self.CHROMOSOMES.copy()
             if self.mito_name and self.mito_name in self.CHROMOSOMES:
                 self.CHROMOSOMES_WITHOUT_MITO.remove(self.mito_name)
@@ -176,5 +177,5 @@ class RattleSNP(SnakeWrapper):
             self.vcf_path_basename = Path(self.vcf_path).name.replace("".join(Path(self.vcf_path).suffixes), "")
 
     def __repr__(self):
-        return f"{self.__class__}({pprint.pprint(self.__dict__)})"
+        return f"{self.__class__}({pp(self.__dict__)})"
 

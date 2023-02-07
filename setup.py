@@ -72,7 +72,8 @@ def main():
             'tqdm',
             'click>=8.0.3',
             'cookiecutter',
-            'docutils < 0.18'
+            'docutils',
+            'snakecdysis'
         ],
         extras_require={
             'dev': ['sphinx_copybutton',

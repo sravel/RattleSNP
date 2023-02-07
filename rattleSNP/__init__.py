@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from .snakeWrapper import *
-from .global_variables import *
-from .snakemake_scripts.rattleSNP_module import *
+from pathlib import Path
+from .global_variables import GIT_URL, DOCS, DATATEST_URL_FILES, SINGULARITY_URL_FILES
 from .snakemake_module import RattleSNP
+from .snakemake_scripts.rattleSNP_module import *
 
-logo = INSTALL_PATH.joinpath('RattleSNP_logo.png').as_posix()
+logo = Path(__file__).parent.resolve().joinpath('RattleSNP_logo.png').as_posix()
 
-__version__ = get_version()
+__version__ = Path(__file__).parent.resolve().joinpath("VERSION").open("r").readline().strip()
 
 __doc__ = """BLABLA"""
 
@@ -31,49 +31,19 @@ description_tools = f"""
     #     '--.:::...---'\:'.:`':`':./
     #                    '-::..:::-'
     
-    Please cite our github: {GIT_URL}
+    Please cite our github: GIT_URL
     Licencied under CeCill-C (http://www.cecill.info/licences/Licence_CeCILL-C_V1-en.html)
     and GPLv3 Intellectual property belongs to IRD, CIRAD and authors.
-    Documentation avail at: {DOCS}
-    {get_last_version(url=GIT_URL, current_version=__version__)}"""
+    Documentation avail at: DOCS"""
 
+dico_tool = {
+    "soft_path": Path(__file__).resolve().parent.as_posix(),
+    "url": GIT_URL,
+    "docs": DOCS,
+    "description_tool": description_tools,
+    "singularity_url_files": SINGULARITY_URL_FILES,
+    "datatest_url_files": DATATEST_URL_FILES,
+    "snakefile": Path(__file__).resolve().parent.joinpath("snakefiles", "Snakefile"),
+    "snakemake_scripts": Path(__file__).resolve().parent.joinpath("snakemake_scripts")
+}
 
-MODULE_FILE = f"""#%Module1.0
-##
-
-## Required internal variables
-set     prefix       {INSTALL_PATH.as_posix().strip()}
-set     version      {__version__.strip()}
-
-# check if install directory exist
-if {{![file exists $prefix]}} {{
-    puts stderr "\t[module-info name] Load Error: $prefix does not exist"
-    break
-    exit 1
-}}
-
-## List conflicting modules here
-conflict rattleSNP
-
-## List prerequisite modules here
-module load graphviz/2.40.1
-
-set		fullname	CulebrONT-{__version__.strip()}
-set		externalurl	"\n\t{DOCS.strip()}\n"
-set		description	"\n\t{__doc__.strip()}
-
-## Required for "module help ..."
-proc ModulesHelp {{}} {{
-  global description externalurl
-  puts stderr "Description - $description"
-  puts stderr "More Docs   - $externalurl"
-}}
-
-## Required for "module display ..." and SWDB
-module-whatis   "loads the [module-info name] environment"
-
-## Software-specific settings exported to user environment
-
-prepend-path PATH $prefix
-
-"""
