@@ -133,11 +133,10 @@ def merge_samtools_depth_csv(csv_files, csv_file, sep="\t"):
         df.to_csv(out_csv_file, index=False, sep=sep)
 
 
-def tsv_per_chromosome(gvcf_files, tsv_file, sep="\t"):
+def tsv_per_chromosome(gvcf_files, tsv_file, chromosome, sep="\t"):
     import pandas as pd
     from pathlib import Path
-    split_by = Path(tsv_file).stem.split("-")[1]
-    dico = {(Path(file).stem.split(split_by)[0], file) for file in gvcf_files}
+    dico = {(Path(file).stem.split(chromosome)[0], file) for file in gvcf_files}
     df = pd.DataFrame.from_dict(dico)
     with open(tsv_file, "w") as out_tsv_file:
         # print(f"Library size:\n{dataframe_mapping_stats}\n")
