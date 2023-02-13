@@ -129,7 +129,7 @@ class RattleSNP(SnakEcdysis):
             raise ValueError(f'CONFIG FILE CHECKING FAIL for section "MAPPING" key "BUILD_STATS" is "True" but no mapping activate, please change "ACTIVATE" to "True"\n')
 
         # if cleaning or mapping check fastq path and
-        if self.cleaning_activated or self.mapping_activated:
+        if self.get_config_value(level1="FASTQC") or self.cleaning_activated or self.mapping_activated:
             self._check_dir_or_string(level1="DATA", level2="FASTQ")
             self.__check_fastq_files()
             self.samples, = glob_wildcards(f"{self.fastq_path}{{fastq,[^/]+}}_R1{self.fastq_files_ext}", followlinks=True)
