@@ -13,10 +13,10 @@ RattleSNP allows you to build a workflow using a simple ``config.yaml`` configur
 
 To create this file, just run:
 
-
-.. click:: rattleSNP.main:create_config
-    :prog: rattleSNP create_config
-    :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: create_config
+    :nested: full
 
 Then, edit the relevant sections of the file to customize your flavor of a workflow.
 
@@ -31,7 +31,7 @@ First, indicate the data path in the ``config.yaml`` configuration file:
     DATA:
         FASTQ: "/path/to/fastq/"
         VCF: ""
-        REFERENCE_FILE: ""/path/to/reference.fasta"
+        REFERENCE_FILE: "/path/to/reference.fasta"
         OUTPUT: "/path/to/output"
 
 Find here a summary table with description of each data need to launch RattleSNP :
@@ -114,18 +114,17 @@ Before attempting to run rattleSNP, please verify that you have already modified
 
 If you installed RattleSNP on a HPC cluster with a job scheduler, you can run:
 
-
-.. click:: rattleSNP.main:run_cluster
-    :prog: rattleSNP run_cluster
-    :show-nested:
-
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: run_cluster
+    :nested: full
 
 ------------------------------------------------------------------------
 
-
-.. click:: rattleSNP.main:run_local
-    :prog: rattleSNP run_local
-    :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: run_local
+    :nested: full
 
 ------------------------------------------------------------------------
 
@@ -137,10 +136,10 @@ Providing more resources
 
 If the cluster default resources are not sufficient, you can edit the ``cluster_config.yaml`` file. See :ref:`2. Adapting *cluster_config.yaml*`:
 
-.. click:: rattleSNP.main:edit_cluster_config
-    :prog: rattleSNP edit_cluster_config
-    :show-nested:
-
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: edit_cluster_config
+    :nested: full
 
 ------------------------------------------------------------------------
 
@@ -149,9 +148,10 @@ Providing your own tools_config.yaml
 
 To change the tools used in a RattleSNP workflow, you can see :ref:`3. How to configure tools_path.yaml`
 
-.. click:: rattleSNP.main:edit_tools
-    :prog: rattleSNP edit_tools
-    :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: edit_tools
+    :nested: full
 
 ------------------------------------------------------------------------
 
