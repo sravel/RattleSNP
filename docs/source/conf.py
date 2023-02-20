@@ -13,24 +13,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import rattleSNP
-from rattleSNP.snakeWrapper.global_variable import *
+import toml
 
+with open('../../pyproject.toml', 'r') as f:
+    conf = toml.load(f)
 
 # The short X.Y version.
 version = rattleSNP.__version__
 # The full version, including alpha/beta/rc tags
 release = rattleSNP.__version__
 
-rst_prolog = f"""
-.. |tools_path| replace:: {GIT_TOOLS_PATH}
-"""
-
 # -- Project information -----------------------------------------------------
 # General information about the project.
-project = "RattleSNP"
-copyright = '2019-2022, S Ravel (CIRAD)'
-github_doc_root = 'https://github.com/sravel/RattleSNP/tree/master/docs/'
-issues_github_path = 'https://github.com/sravel/RattleSNP/issues'
+project = conf['project']['name']
+authors = conf['project']['authors']
+copyright = '2019-2023, S Ravel (CIRAD)'
 
 latex_authors = '''
 Sebastien Ravel (CIRAD)
@@ -106,6 +103,15 @@ html_logo = '_images/rattleSNP_logo.png'
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 html_favicon = '_images/rattleSNP_logo.png'
+
+html_context = {
+    "gitlab_host": "forge.ird.fr",
+    "display_gitlab": True, # Integrate Gitlab
+    "gitlab_user": "PHIM/sravel", # Username
+    "gitlab_repo": "RattleSNP", # Repo name
+    "gitlab_version": "master", # Version
+    "conf_py_path": "/docs/source/", # Path in the checkout to the docs root
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
