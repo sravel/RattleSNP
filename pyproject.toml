@@ -1,16 +1,86 @@
+# Build system backend to create package to upload on pypi
 [build-system]
-requires = ["setuptools", "wheel", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  "setuptools_scm[toml]>=6.2"
+]
 
+# configuration of setuptools_scm to use tag version autoincrementation
 [tool.setuptools_scm]
-# See configuration details in https://github.com/pypa/setuptools_scm
-version_scheme = "release-branch-semver"
-local_scheme = "node-and-date"
-normalize = false
-root = "."
-relative_to = "setup.py"
-write_to = 'rattleSNP/_version.py'
+write_to = "rattleSNP/_version.py"
+version_scheme="release-branch-semver"
+tag_regex="^(\\d.\\d.\\d)-*\\w*\\d*$"       # allow value like 0.0.1-rc0
+local_scheme = "no-local-version"
 
+# define Project settings
+[project]
+name = "rattleSNP"
+dynamic = ["version"]
+description = "RattleSNP is mapping workflow!!!!!"
+authors = [
+    {name = "Ravel Sebastien (CIRAD)",email = "sebastien.ravel@cirad.fr"},
+]
+dependencies = ["PyYAML", "click>=8.0.3", "pandas", "matplotlib",
+    "tabulate", "biopython", "numpy", "argparse", "snakemake", "tqdm",
+    "cookiecutter", "docutils", "snakecdysis"]
+requires-python = ">=3.8"
+readme =  "README.rst"
+license = {file = "LICENSE"}
+keywords = ["snakemake", "SNP calling", "workflow"]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    'License :: CeCILL-C Free Software License Agreement (CECILL-C)',
+    'License :: Free for non-commercial use',
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Developers',
+    'Intended Audience :: End Users/Desktop',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: R',
+    'Natural Language :: English',
+    'Topic :: Scientific/Engineering',
+    'Topic :: Scientific/Engineering :: Bio-Informatics'
+]
+
+[project.urls]
+Homepage = "https://forge.ird.fr/phim/sravel/RattleSNP"
+Documentation = "https://rattlesnp.readthedocs.io/en/latest/"
+repository = "https://forge.ird.fr/phim/sravel/RattleSNP.git"
+Downloads = "https://forge.ird.fr/phim/sravel/RattleSNP/releases/"
+"Bug Tracker" = "https://forge.ird.fr/phim/sravel/RattleSNP/issues"
+"Source Code" = "https://forge.ird.fr/phim/sravel/RattleSNP"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx_click",
+    "sphinx_copybutton",
+    "sphinx_rtd_theme",
+    "tox",
+]
+
+# setup scripts links
+[project.scripts]
+vcf2geno = "rattleSNP.scripts.vcf2geno:main"
+vcf2phylip = "rattleSNP.scripts.vcf2phylip:main"
+rattleSNP = "rattleSNP.main:main"
+
+# setup library entry-points
+[project.entry-points.rattleSNP]
+rattleSNP = "__init__"
+
+# Try to link sphinx to file
+[tool.sphinx]
+source-dir = "docs/source"
+build-dir = "docs/build"
+config-dir = "docs/source"
+
+#######
+# tox test to mv on gitlab-ci.yaml
 [tool.tox]
 legacy_tox_ini = """
 [tox]
