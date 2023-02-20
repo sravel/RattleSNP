@@ -1,5 +1,5 @@
-.. image:: docs/source/_images/rattleSNP_logo.png
-   :target: docs/source/_images/rattleSNP_logo.png
+.. image:: https://rattlesnp.readthedocs.io/en/latest/_images/rattleSNP_logo.png
+   :target: https://rattlesnp.readthedocs.io/en/latest/_images/rattleSNP_logo.png
    :align: center
    :alt: RattleSNP Logo
 
