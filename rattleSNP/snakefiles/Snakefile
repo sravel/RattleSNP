@@ -831,7 +831,7 @@ rule vcf_to_fasta:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        ({rattleSNP_obj.snakemake_scripts}/vcf2phylip.py -i {{input.vcf_file_filter}} -p -f --output-folder {{params.folder}}) 1>{{log.output}} 2>{{log.error}}
+        (vcf2phylip -i {{input.vcf_file_filter}} -p -f --output-folder {{params.folder}}) 1>{{log.output}} 2>{{log.error}}
         """
 
 rule vcf_to_geno:
@@ -863,7 +863,7 @@ rule vcf_to_geno:
         tools_config["MODULES"]["PYTHON3"]
     shell:
         f"""
-        ({rattleSNP_obj.snakemake_scripts}/vcf2geno.py --vcf {{input.vcf_file_filter}} --geno {{output.geno}}) 1>{{log.output}} 2>{{log.error}}
+        (vcf2geno --vcf {{input.vcf_file_filter}} --geno {{output.geno}}) 1>{{log.output}} 2>{{log.error}}
         """
 
 ######################################
@@ -875,6 +875,7 @@ def vcf_to_stats(wildcards):
     if rattleSNP_obj.vcf_path and wildcards.vcf_suffix == "":
         return rattleSNP_obj.vcf_path
     if not rattleSNP_obj.vcf_path:
+
         return rules.bcftools_concat.output.vcf_file
 
 rule vcf_stats:
