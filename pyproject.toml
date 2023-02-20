@@ -21,9 +21,7 @@ description = "RattleSNP is mapping workflow!!!!!"
 authors = [
     {name = "Ravel Sebastien (CIRAD)",email = "sebastien.ravel@cirad.fr"},
 ]
-dependencies = ["PyYAML", "click>=8.0.3", "pandas", "matplotlib",
-    "tabulate", "biopython", "numpy", "argparse", "snakemake", "tqdm",
-    "cookiecutter", "docutils", "snakecdysis"]
+dependencies = ["PyYAML", "click>=8.0.3", "pandas", "matplotlib", "tabulate", "biopython", "numpy", "argparse", "snakemake", "tqdm", "cookiecutter", "docutils", "snakecdysis"]
 requires-python = ">=3.8"
 readme =  "README.rst"
 license = {file = "LICENSE"}
