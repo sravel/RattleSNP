@@ -4,14 +4,11 @@
 version: 2
 # Optionally set the version of Python and requirements required to build your docs
 python:
-
   install:
     - requirements: docs/source/requirements.txt
     - version: "3.9"
     - method: pip
       path: .
-      extra_requirements:
-        - docs
 
 
 # Set the version of Python and other tools you might need
