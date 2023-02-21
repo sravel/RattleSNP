@@ -1,6 +1,7 @@
 .. contents:: Table of Contents
    :depth: 2
    :backlinks: entry
+   :local:
 
 How to create a workflow
 ========================
@@ -17,6 +18,7 @@ To create this file, just run:
     :prog: rattleSNP
     :commands: create_config
     :nested: full
+    :hide-header:
 
 Then, edit the relevant sections of the file to customize your flavor of a workflow.
 
@@ -118,6 +120,7 @@ If you installed RattleSNP on a HPC cluster with a job scheduler, you can run:
     :prog: rattleSNP
     :commands: run_cluster
     :nested: full
+    :hide-header:
 
 ------------------------------------------------------------------------
 
@@ -125,6 +128,7 @@ If you installed RattleSNP on a HPC cluster with a job scheduler, you can run:
     :prog: rattleSNP
     :commands: run_local
     :nested: full
+    :hide-header:
 
 ------------------------------------------------------------------------
 
@@ -140,6 +144,7 @@ If the cluster default resources are not sufficient, you can edit the ``cluster_
     :prog: rattleSNP
     :commands: edit_cluster_config
     :nested: full
+    :hide-header:
 
 ------------------------------------------------------------------------
 
@@ -152,6 +157,7 @@ To change the tools used in a RattleSNP workflow, you can see :ref:`3. How to co
     :prog: rattleSNP
     :commands: edit_tools
     :nested: full
+    :hide-header:
 
 ------------------------------------------------------------------------
 

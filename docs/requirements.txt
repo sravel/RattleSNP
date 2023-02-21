@@ -1,5 +1,5 @@
 sphinx_copybutton
 snakemake
-sphinx_click
+sphinx-click@git+https://github.com/TomerGodinger/sphinx-click.git@new-features
 toml
 -e .

@@ -1,6 +1,7 @@
 .. contents:: Table of Contents
    :depth: 2
    :backlinks: entry
+   :local:
 
 Requirements
 ============
@@ -34,6 +35,7 @@ Install RattleSNP in a *local* (single machine) mode using ``rattleSNP install_l
     :prog: rattleSNP
     :commands: install_local
     :nested: full
+    :hide-header:
 
 #:hide-header:
 
@@ -59,6 +61,7 @@ We tried to make cluster installation as easy as possible, but it is somehow nec
     :prog: rattleSNP
     :commands: install_cluster
     :nested: full
+    :hide-header:
 
 1. Adapt `profile` and `cluster_config.yaml`
 ---------------------------------------------
@@ -105,6 +108,7 @@ In order to test your install of RattleSNP, a data test called ``data_test_rattl
     :prog: rattleSNP
     :commands: test_install
     :nested: full
+    :hide-header:
 
 This dataset will be automatically downloaded by RattleSNP in the ``-d`` repertory using :
 
