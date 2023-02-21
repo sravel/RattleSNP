@@ -15,6 +15,7 @@
 import rattleSNP
 import toml
 import sphinx_rtd_theme
+from datetime import datetime
 
 with open('../../pyproject.toml', 'r') as f:
     conf = toml.load(f)
@@ -28,7 +29,9 @@ release = rattleSNP.__version__
 # General information about the project.
 project = conf['project']['name']
 authors = conf['project']['authors']
-copyright = '2019-2023, S Ravel (CIRAD)'
+date = datetime.now()
+copyright = "2019-{year}, S Ravel (CIRAD)".format(year=date.timetuple()[0])
+
 
 latex_authors = '''
 Sebastien Ravel (CIRAD)
@@ -110,6 +113,7 @@ html_logo = '_images/rattleSNP_logo.png'
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 html_favicon = '_images/rattleSNP-small.svg'
+global html_context
 
 html_context = {
     "gitlab_host": "forge.ird.fr",
