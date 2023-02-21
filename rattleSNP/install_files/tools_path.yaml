@@ -4,8 +4,8 @@
 ## WARNING!!! DO NOT ERASE LINES OR COMMENT THEM !  è_é
 
 SINGULARITY:
-    REPORT : '{INSTALL_PATH}/containers/Singularity.report.sif'
-    TOOLS : '{INSTALL_PATH}/containers/Singularity.rattleSNP_tools.sif'
+    REPORT : 'INSTALL_PATH/containers/Singularity.report.sif'
+    TOOLS : 'INSTALL_PATH/containers/Singularity.rattleSNP_tools.sif'
 
 MODULES:
     "SAMTOOLS": "samtools"                  # use for filter reads and convert sam to bam
