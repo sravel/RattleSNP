@@ -284,9 +284,9 @@ This would save users a painful exploration of the snakefiles of RattleSNP.
 
 
 
-.. |PythonVersions| image:: https://img.shields.io/badge/python-3.7%2B-blue
+.. |PythonVersions| image:: https://img.shields.io/badge/python-3.8%2B-blue
    :target: https://www.python.org/downloads
-   :alt: Python 3.7+
+   :alt: Python 3.8+
 
 .. |SnakemakeVersions| image:: https://img.shields.io/badge/snakemake-≥5.10.0-brightgreen.svg?style=flat
    :target: https://snakemake.readthedocs.io
