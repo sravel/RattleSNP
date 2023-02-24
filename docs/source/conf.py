@@ -13,24 +13,25 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 import rattleSNP
-from rattleSNP.snakeWrapper.global_variable import *
+import toml
+import sphinx_rtd_theme
+from datetime import datetime
 
+with open('../../pyproject.toml', 'r') as f:
+    conf = toml.load(f)
 
 # The short X.Y version.
 version = rattleSNP.__version__
 # The full version, including alpha/beta/rc tags
 release = rattleSNP.__version__
 
-rst_prolog = f"""
-.. |tools_path| replace:: {GIT_TOOLS_PATH}
-"""
-
 # -- Project information -----------------------------------------------------
 # General information about the project.
-project = "RattleSNP"
-copyright = '2019-2022, S Ravel (CIRAD)'
-github_doc_root = 'https://github.com/sravel/RattleSNP/tree/master/docs/'
-issues_github_path = 'https://github.com/sravel/RattleSNP/issues'
+project = conf['project']['name']
+authors = conf['project']['authors']
+date = datetime.now()
+copyright = "2019-{year}, S Ravel (CIRAD)".format(year=date.timetuple()[0])
+
 
 latex_authors = '''
 Sebastien Ravel (CIRAD)
@@ -49,6 +50,11 @@ extensions = [
               "sphinx_rtd_theme",
               'sphinx_click'
               ]
+gitlab_url = 'forge.ird.fr'
+gitlab_user = 'PHIM/sravel'
+gitlab_repo = 'forge.ird.fr'
+gitlab_version = 'master'
+display_gitlab = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -70,26 +76,27 @@ master_doc = 'index'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {
-    # 'analytics_id': 'UA-172723859-1',  #  Provided by Google in your dashboard
-    # 'analytics_anonymize_ip': False,
-    # 'logo_only': False,
-    # 'display_version': True,
-    # 'prev_next_buttons_location': 'bottom',
-    # 'style_external_links': False,
-    # 'vcs_pageview_mode': '',
-    # 'style_nav_header_background': 'cyan',
+html_theme_options = {
+    'analytics_id': '',  #  Provided by Google in your dashboard
+    'analytics_anonymize_ip': False,
+    'logo_only': False,
+    'display_version': True,
+    'prev_next_buttons_location': 'bottom',
+    'style_external_links': False,
+    'vcs_pageview_mode': '',
+    'style_nav_header_background': '#2980B9',
     # Toc options
-    # 'collapse_navigation': False,
-    # 'sticky_navigation': True,
-    # 'navigation_depth': 3,
-    # 'includehidden': False,
-    # 'titles_only': False
-# }
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'navigation_depth': 3,
+    'includehidden': False,
+    'titles_only': False,
+}
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -105,7 +112,17 @@ html_logo = '_images/rattleSNP_logo.png'
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = '_images/rattleSNP_logo.png'
+html_favicon = '_images/rattleSNP-small.svg'
+global html_context
+
+html_context = {
+    "gitlab_host": "forge.ird.fr",
+    "display_gitlab": True, # Integrate Gitlab
+    "gitlab_user": "PHIM/sravel", # Username
+    "gitlab_repo": "RattleSNP", # Repo name
+    "gitlab_version": "master", # Version
+    "conf_py_path": "/docs/source/", # Path in the checkout to the docs root
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -126,64 +143,3 @@ html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 html_show_copyright = True
-
-
-# -- Options for LaTeX output ---------------------------------------------
-# latex_engine = 'pdflatex'
-
-# latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    # 'papersize': 'a4paper',
-    # The font size ('10pt', '11pt' or '12pt').
-    # 'pointsize': '12pt',
-    # Latex figure (float) alignment
-    # 'figure_align':'htbp',
-    # 'extraclassoptions': 'openany',
-    # 'preamble': r'''
-        # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        # %%%add number to subsubsection 2=subsection, 3=subsubsection
-        # \setcounter{secnumdepth}{0}
-        # %%%% Table of content upto 2=subsection, 3=subsubsection
-        # \setcounter{tocdepth}{2}
-    # ''',
-
-    # 'sphinxsetup': \
-        # 'hmargin={0.7in,0.7in}, vmargin={0.7in,0.7in}, \
-        # marginpar=1in, \
-        # verbatimwithframe=False, \
-        # TitleColor={rgb}{0,0,0}, \
-        # HeaderFamily=\\rmfamily\\bfseries, \
-        # InnerLinkColor={rgb}{0,0,1}, \
-        # OuterLinkColor={rgb}{0,0,1}',
-# }
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-
-# latex_documents = [
-  # ('index', 'RattleSNP.tex', 'Documentation',
-   # latex_authors, 'manual', True),
-# ]
-
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-# latex_logo = '_images/culebront_logo.png'
-
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-# latex_use_parts = False
-
-# If true, show page references after internal links.
-#latex_show_pagerefs = False
-
-# If true, show URL addresses after external links.
-#latex_show_urls = False
-
-# Documents to append as an appendix to all manuals.
-#latex_appendices = []
-
-# If false, no module index is generated.
-#latex_domain_indices = True
-
-# latex_toplevel_sectioning = 'section'

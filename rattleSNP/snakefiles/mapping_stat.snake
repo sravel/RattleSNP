@@ -4,7 +4,7 @@ rule samtools_flagstat:
     """apply samtools flagstats on all bam"""
     threads: get_threads('samtools_flagstat', 1)
     input:
-        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+        bam = f"{out_dir}1_mapping/{rattleSNP_obj.mapping_tool_activated}/{{samples}}.bam"
     output:
         txt_file = f"{out_dir}1_mapping/STATS/flagstat/{{samples}}_flagstat.txt"
     log:
@@ -35,7 +35,7 @@ rule merge_flagstat:
     """merge all samtools flagstat files"""
     threads : get_threads('merge_flagstat', 1)
     input :
-        csv_resume = expand(rules.samtools_flagstat.output.txt_file , samples = rattlesnp.samples)
+        csv_resume = expand(rules.samtools_flagstat.output.txt_file , samples = rattleSNP_obj.samples)
     output :
         csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_flagstat.csv", category="Resume mapping info's")
     log:
@@ -62,7 +62,7 @@ rule samtools_depth:
     """apply samtools depth on all bam SE end PE"""
     threads: get_threads('samtools_depth', 1)
     input:
-        bam = f"{out_dir}1_mapping/{rattlesnp.mapping_tool_activated}/{{samples}}.bam"
+        bam = f"{out_dir}1_mapping/{rattleSNP_obj.mapping_tool_activated}/{{samples}}.bam"
     output:
         txt_file = f"{out_dir}1_mapping/STATS/depth/{{samples}}_DEPTH.txt"
     params:
@@ -122,7 +122,7 @@ rule merge_samtools_depth_stats:
     """merge all bam_stats_to_csv files"""
     threads : get_threads('merge_samtools_depth_stats', 1)
     input :
-        csv_resume = expand(rules.samtools_depth_to_csv.output.csv_resume , samples = rattlesnp.samples)
+        csv_resume = expand(rules.samtools_depth_to_csv.output.csv_resume , samples = rattleSNP_obj.samples)
     output :
         csv_resume_merge = report(f"{out_dir}1_mapping/STATS/all_mapping_stats_Depth_resume.csv", category="Resume mapping info's")
     log:
@@ -172,5 +172,5 @@ rule report:
             - LOG output: {{log.output}}
         """
     script:
-        f"{SNAKEMAKE_SCRIPTS}/report.Rmd"
+        f"{rattleSNP_obj.snakemake_scripts}/report.Rmd"
 

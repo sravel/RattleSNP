@@ -1,6 +1,7 @@
 .. contents:: Table of Contents
    :depth: 2
    :backlinks: entry
+   :local:
 
 Requirements
 ============
@@ -30,9 +31,13 @@ Steps for LOCAL installation
 
 Install RattleSNP in a *local* (single machine) mode using ``rattleSNP install_local`` command line.
 
-.. click:: rattleSNP.main:install_local
-   :prog: rattleSNP install_local
-   :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: install_local
+    :nested: full
+    :hide-header:
+
+#:hide-header:
 
 To create a pipeline, tools used by RattleSNP are wrapped into ``Singularity images``. These images are automatically downloaded and used by the configuration files of the pipeline. Local mode install, without scheduler, is constrains to use these Singularity images.
 
@@ -52,10 +57,11 @@ RattleSNP uses any available snakemake profiles to ease cluster installation and
 Run the command `rattleSNP install_cluster` to install on a HPC cluster.
 We tried to make cluster installation as easy as possible, but it is somehow necessary to adapt a few files according to your cluster environment.
 
-
-.. click:: rattleSNP.main:install_cluster
-   :prog: rattleSNP install_cluster
-   :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: install_cluster
+    :nested: full
+    :hide-header:
 
 1. Adapt `profile` and `cluster_config.yaml`
 ---------------------------------------------
@@ -98,9 +104,11 @@ Check install
 
 In order to test your install of RattleSNP, a data test called ``data_test_rattleSNP/`` is available at http://nas-bgpi.myds.me/DOC/rattleSNP/data_test_rattleSNP.zip.
 
-.. click:: rattleSNP.main:test_install
-   :prog: rattleSNP test_install
-   :show-nested:
+.. click:: rattleSNP.main:main
+    :prog: rattleSNP
+    :commands: test_install
+    :nested: full
+    :hide-header:
 
 This dataset will be automatically downloaded by RattleSNP in the ``-d`` repertory using :
 
@@ -276,9 +284,9 @@ This would save users a painful exploration of the snakefiles of RattleSNP.
 
 
 
-.. |PythonVersions| image:: https://img.shields.io/badge/python-3.7%2B-blue
+.. |PythonVersions| image:: https://img.shields.io/badge/python-3.8%2B-blue
    :target: https://www.python.org/downloads
-   :alt: Python 3.7+
+   :alt: Python 3.8+
 
 .. |SnakemakeVersions| image:: https://img.shields.io/badge/snakemake-≥5.10.0-brightgreen.svg?style=flat
    :target: https://snakemake.readthedocs.io

@@ -37,7 +37,7 @@ Directed acyclic graphs (DAGs) show the differences between deactivated (BUILD_S
    :target: _images/schema_pipeline_global-NOBUILD_STATS.png
    :alt: BUILD_STATS_FALSE
 
-and activated CIRCULAR step on configuration file (BUILD_STATS=True):
+and activated BUILD_STATS step on configuration file (BUILD_STATS=True):
 
 .. image:: _images/schema_pipeline_global-BUILD_STATS.png
    :target: _images/schema_pipeline_global-BUILD_STATS.png
