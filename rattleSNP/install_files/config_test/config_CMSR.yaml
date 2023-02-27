@@ -4,12 +4,12 @@
 ################################
 # Input output data options
 DATA:
-    FASTQ: "data_test_mapping/fastq_full/"
-#    BAM: "data_test_mapping/output/1_mapping/BWA_MEM/"
+    FASTQ: "DATA_DIR/fastq_full/"
+#    BAM: "DATA_DIR/output/1_mapping/BWA_MEM/"
     BAM: ""
     VCF: ""
-    REFERENCE_FILE: "data_test_mapping/reference/FR1067.fasta"
-    OUTPUT: "data_test_mapping/output"
+    REFERENCE_FILE: "DATA_DIR/reference/FR1067.fasta"
+    OUTPUT: "DATA_DIR/output"
 
 PARAMS:
     MITOCHONDRIAL_NAME : ""
