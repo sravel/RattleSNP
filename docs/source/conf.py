@@ -32,13 +32,7 @@ authors = conf['project']['authors']
 date = datetime.now()
 copyright = "2019-{year}, S Ravel (CIRAD)".format(year=date.timetuple()[0])
 
-
-latex_authors = '''
-Sebastien Ravel (CIRAD)
-'''
-
 # -- General configuration ---------------------------------------------------
-
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
